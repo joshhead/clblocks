@@ -7,9 +7,9 @@
 
 (defn debounce
   "Return a function that will call f only once until not called for ms milliseconds"
-  [f ms & args]
+  [f ms]
   (let [last-call (atom (.getTime (Date.)))]
-    (fn []
+    (fn [& args]
       (let [start @last-call
             end (.getTime (Date.))
             diff (- end start)]
@@ -23,18 +23,19 @@
 
 (defn setup-frame
   [frame]
-  (let [last-press (atom (.getTime (Date.)))
-        key-listener (reify
-                       java.awt.event.KeyListener
-                       (keyPressed [this e]
-                         (let [act (fn [] (println "keypress e"))
-                               act-db (debounce act 50)]
-                           act-db))
-                       (keyReleased [this e]
-                         nil)
-                       (keyTyped [this e]
-                         nil))]
-    (.addKeyListener frame key-listener)))
+  (let [keypressed (debounce (fn [this e]
+                               (println "keypress")) 50)
+        keyreleased (debounce (fn [this e]
+                                (println "keyrelease")) 50)]
+    (let [key-listener (reify
+                         java.awt.event.KeyListener
+                         (keyPressed [this e]
+                           (keypressed this e))
+                         (keyReleased [this e]
+                           (keyreleased this e))
+                         (keyTyped [this e]
+                           nil))]
+      (.addKeyListener frame key-listener))))
 
 (defn draw-square
   [frame direction]
