@@ -5,6 +5,17 @@
 
 (def frame (Frame.))
 
+(defn debounce
+  "Return a function that will call f only once until not called for ms milliseconds"
+  [f ms & args]
+  (let [last-call (atom (.getTime (Date.)))]
+    (fn []
+      (let [start @last-call
+            end (.getTime (Date.))
+            diff (- end start)]
+        (when (> diff ms) (apply f args))
+        (compare-and-set! last-call start end)))))
+
 (defn remove-key-listeners
   [component]
   (for [l (.getKeyListeners component)]
@@ -16,11 +27,9 @@
         key-listener (reify
                        java.awt.event.KeyListener
                        (keyPressed [this e]
-                         (let [start @last-press
-                               end (.getTime (Date.))
-                               diff (- end start)]
-                           (when (> diff 50) (println "keypress" diff e))
-                           (compare-and-set! last-press start end)))
+                         (let [act (fn [] (println "keypress e"))
+                               act-db (debounce act 50)]
+                           act-db))
                        (keyReleased [this e]
                          nil)
                        (keyTyped [this e]
