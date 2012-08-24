@@ -1,5 +1,6 @@
 (ns cltetris.core
-  ( :import (java.awt Frame Graphics Color)
+  ( :import (java.util Date)
+            (java.awt Frame Graphics Color)
             (java.awt.event KeyListener)))
 
 (def frame (Frame.))
@@ -11,14 +12,19 @@
 
 (defn setup-frame
   [frame]
-  (let [key-listener (reify
+  (let [last-press (atom (.getTime (Date.)))
+        key-listener (reify
                        java.awt.event.KeyListener
                        (keyPressed [this e]
-                         (println "keypress" e))
+                         (let [start @last-press
+                               end (.getTime (Date.))
+                               diff (- end start)]
+                           (when (> diff 50) (println "keypress" diff e))
+                           (compare-and-set! last-press start end)))
                        (keyReleased [this e]
-                         (println "keyrelease" e))
+                         nil)
                        (keyTyped [this e]
-                         (println "keytyped" e)))]
+                         nil))]
     (.addKeyListener frame key-listener)))
 
 (defn draw-square
