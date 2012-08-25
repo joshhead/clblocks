@@ -1,4 +1,5 @@
 (defproject cltetris "0.1.0-SNAPSHOT"
+  :main cltetris.core
   :description "May one day be a tetris game"
   :url "http://example.com/FIXME"
   :license {:name "Eclipse Public License"

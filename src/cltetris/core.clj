@@ -4,8 +4,6 @@
             (java.awt.event KeyListener)))
 
 (def keysdown (ref #{}))
-(def running (ref true))
-(def frame (Frame.))
 
 (defn debounce
   "Return a function that will call f only once until not called for ms milliseconds"
@@ -26,9 +24,9 @@
 (defn setup-frame
   [frame]
   (let [keypressed (debounce (fn [this e]
-                               (dosync (alter keysdown conj :center))) 50)
+                               (dosync (alter keysdown conj :up))) 50)
         keyreleased (debounce (fn [this e]
-                                (dosync (alter keysdown disj :center))) 50)]
+                                (dosync (alter keysdown disj :up))) 50)]
     (let [key-listener (reify
                          java.awt.event.KeyListener
                          (keyPressed [this e]
@@ -55,20 +53,23 @@
         (.clearRect 0 0 1000 1000)
         (.fillRect x y 100 100)))))
 
-(.setSize frame 1000 1000)
-(.show frame)
-(setup-frame frame)
-
-(.start (Thread. (fn [] (while @running (do
-                                       (draw-square frame (first @keysdown))
-                                       (Thread/sleep 100))))))
-(.start (Thread. (fn [] (while @running (do
-                                          (println (or (first @keysdown) :up))
-                                          (Thread/sleep 100))))))
-(dosync (alter running (fn [& args] true)))
-(dosync (alter running (fn [& args] false)))
+#_(
+  "Commands to manually contol the thread flag"
+  (dosync (alter running (fn [& args] true)))
+  (dosync (alter running (fn [& args] false)))
+)
 
 (defn -main
-  "I don't do a whole lot."
+  "Start the show"
   [& args]
-  (println "Hello, World!"))
+  (def frame (Frame.))
+  (.show frame)
+  (.setSize frame 500 500)
+  (setup-frame frame)
+  (def running (ref true))
+  (.start (Thread. (fn [] (while @running (do
+                                            (draw-square frame (first @keysdown))
+                                            (Thread/sleep 100))))))
+  (.start (Thread. (fn [] (while @running (do
+                                            (println (first @keysdown))
+                                            (Thread/sleep 100)))))))
