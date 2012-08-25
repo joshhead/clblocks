@@ -40,19 +40,15 @@
 (defn draw-square
   [frame direction]
   (let [g (.getGraphics frame)
-        left [0 100]
-        right [200 100]
-        up [100 0]
-        down [100 200]
-        center [100 100]
         coords (case direction
-                 :up up
-                 :down down
-                 :left left
-                 :right right
-                 :center center)]
+                 :up [100 0]
+                 :down [100 200]
+                 :left [0 100]
+                 :right [200 100]
+                 :center [100 100])]
     (let [[x y] coords]
       (doto g
+        (.setColor (Color. 0 0 0))
         (.clearRect 0 0 1000 1000)
         (.fillRect x y 100 100)))))
 
