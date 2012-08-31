@@ -29,16 +29,16 @@
         keypressed (debounce (fn [this e]
                                (dosync (alter keysdown conj (get-event-keyword e)))) 00)
         keyreleased (debounce (fn [this e]
-                                (dosync (alter keysdown disj (get-event-keyword e)))) 00)]
-    (let [key-listener (reify
-                         java.awt.event.KeyListener
-                         (keyPressed [this e]
-                           (keypressed this e))
-                         (keyReleased [this e]
-                           (keyreleased this e))
-                         (keyTyped [this e]
-                           nil))]
-      (.addKeyListener frame key-listener))))
+                                (dosync (alter keysdown disj (get-event-keyword e)))) 00)
+        key-listener (reify
+                       java.awt.event.KeyListener
+                       (keyPressed [this e]
+                         (keypressed this e))
+                       (keyReleased [this e]
+                         (keyreleased this e))
+                       (keyTyped [this e]
+                         nil))]
+    (.addKeyListener frame key-listener)))
 
 (defn draw-square
   [frame direction]
