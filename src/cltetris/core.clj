@@ -25,14 +25,11 @@
 (defn setup-frame
   [frame]
   (let [keycodes {"Up" :up, "Down" :down, "Left" :left, "Right" :right}
+        get-event-keyword (fn [e] (get keycodes (KeyEvent/getKeyText (.getKeyCode e)) :center))
         keypressed (debounce (fn [this e]
-                               (dosync
-                                (alter keysdown conj
-                                       (get keycodes (KeyEvent/getKeyText (.getKeyCode e)) :center)))) 00)
+                               (dosync (alter keysdown conj (get-event-keyword e)))) 00)
         keyreleased (debounce (fn [this e]
-                                (dosync
-                                 (alter keysdown disj
-                                        (get keycodes (KeyEvent/getKeyText (.getKeyCode e)) :center)))) 00)]
+                                (dosync (alter keysdown disj (get-event-keyword e)))) 00)]
     (let [key-listener (reify
                          java.awt.event.KeyListener
                          (keyPressed [this e]
