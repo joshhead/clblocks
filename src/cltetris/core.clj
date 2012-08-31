@@ -1,7 +1,7 @@
 (ns cltetris.core
   ( :import (java.util Date)
             (java.awt Frame Graphics Color)
-            (java.awt.event KeyListener)
+            (java.awt.event KeyListener KeyEvent)
             (java.awt.image BufferedImage)))
 
 (def keysdown (ref #{}))
@@ -24,10 +24,15 @@
 
 (defn setup-frame
   [frame]
-  (let [keypressed (debounce (fn [this e]
-                               (dosync (alter keysdown conj :up))) 50)
+  (let [keycodes {"Up" :up, "Down" :down, "Left" :left, "Right" :right}
+        keypressed (debounce (fn [this e]
+                               (dosync
+                                (alter keysdown conj
+                                       (get keycodes (KeyEvent/getKeyText (.getKeyCode e)) :center)))) 00)
         keyreleased (debounce (fn [this e]
-                                (dosync (alter keysdown disj :up))) 50)]
+                                (dosync
+                                 (alter keysdown disj
+                                        (get keycodes (KeyEvent/getKeyText (.getKeyCode e)) :center)))) 00)]
     (let [key-listener (reify
                          java.awt.event.KeyListener
                          (keyPressed [this e]
