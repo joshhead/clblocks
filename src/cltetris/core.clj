@@ -1,7 +1,8 @@
 (ns cltetris.core
   ( :import (java.util Date)
             (java.awt Frame Graphics Color)
-            (java.awt.event KeyListener)))
+            (java.awt.event KeyListener)
+            (java.awt.image BufferedImage)))
 
 (def keysdown (ref #{}))
 
@@ -39,19 +40,24 @@
 
 (defn draw-square
   [frame direction]
-  (let [g (.getGraphics frame)
-        coords (case direction
+  (let [width (.getWidth frame)
+        height (.getHeight frame)
+        back-img (BufferedImage. width height BufferedImage/TYPE_4BYTE_ABGR)
+        back-g (.createGraphics back-img)
+        g (.getGraphics frame)
+        [x y] (case direction
                  :up [100 0]
                  :down [100 200]
                  :left [0 100]
                  :right [200 100]
                  :center [100 100]
-                [100 100])]
-    (let [[x y] coords]
-      (doto g
-        (.setColor (Color. 0 0 0))
-        (.clearRect 0 0 1000 1000)
-        (.fillRect x y 100 100)))))
+                 [100 100])]
+    (doto back-g
+      (.setColor (Color. 200 200 200))
+      (.fillRect 0 0 width height)
+      (.setColor (Color. 0 100 0))
+      (.fillRect x y 100 100))
+    (.drawImage g back-img 0 0 nil)))
 
 #_(
   "Commands to manually contol the thread flag"
