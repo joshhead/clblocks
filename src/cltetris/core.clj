@@ -77,7 +77,7 @@
   (def running (ref true))
   (.start (Thread. (fn [] (while @running (do
                                             (draw-square frame (first @keysdown))
-                                            (Thread/sleep 100))))))
-  (.start (Thread. (fn [] (while @running (do
+                                            (Thread/sleep 33))))))
+  #_(.start (Thread. (fn [] (while @running (do
                                             (println (first @keysdown))
-                                            (Thread/sleep 100)))))))
+                                            (Thread/sleep 33)))))))
