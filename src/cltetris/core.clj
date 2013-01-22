@@ -6,17 +6,6 @@
 
 (def keysdown (ref #{}))
 
-(defn debounce
-  "Return a function that will call f only once until not called for ms milliseconds"
-  [f ms]
-  (let [last-call (atom (.getTime (Date.)))]
-    (fn [& args]
-      (let [start @last-call
-            end (.getTime (Date.))
-            diff (- end start)]
-        (when (> diff ms) (apply f args))
-        (compare-and-set! last-call start end)))))
-
 (defn remove-key-listeners
   [component]
   (for [l (.getKeyListeners component)]
@@ -26,10 +15,10 @@
   [frame]
   (let [keycodes {"Up" :up, "Down" :down, "Left" :left, "Right" :right}
         get-event-keyword (fn [e] (get keycodes (KeyEvent/getKeyText (.getKeyCode e)) :center))
-        keypressed (debounce (fn [this e]
-                               (dosync (alter keysdown conj (get-event-keyword e)))) 00)
-        keyreleased (debounce (fn [this e]
-                                (dosync (alter keysdown disj (get-event-keyword e)))) 00)
+        keypressed (fn [this e]
+                     (dosync (alter keysdown conj (get-event-keyword e))))
+        keyreleased (fn [this e]
+                      (dosync (alter keysdown disj (get-event-keyword e))))
         key-listener (reify
                        java.awt.event.KeyListener
                        (keyPressed [this e]
