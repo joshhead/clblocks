@@ -1,7 +1,7 @@
 (ns cltetris.core
   ( :import (java.util Date)
             (java.awt Frame Graphics Color)
-            (java.awt.event KeyListener KeyEvent)
+            (java.awt.event KeyListener KeyEvent WindowAdapter)
             (java.awt.image BufferedImage)))
 
 (def keysdown (ref #{}))
@@ -26,8 +26,14 @@
                        (keyReleased [this e]
                          (keyreleased this e))
                        (keyTyped [this e]
-                         nil))]
-    (.addKeyListener frame key-listener)))
+                         nil))
+        close-listener (proxy [WindowAdapter] []
+                         (windowClosing
+                           [event]
+                           (System/exit 0)))]
+    (doto frame
+      (.addKeyListener key-listener)
+      (.addWindowListener close-listener))))
 
 (defn draw-square
   [frame direction]
