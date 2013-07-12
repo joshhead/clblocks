@@ -9,7 +9,8 @@
 (defn remove-key-listeners
   [component]
   (for [l (.getKeyListeners component)]
-    (.removeKeyListener component l)))
+    (.removeKeyListener component l))
+  component)
 
 (defn setup-frame
   [frame]
@@ -56,12 +57,6 @@
       (.fillRect x y 100 100))
     (.drawImage g back-img 0 0 nil)))
 
-#_(
-  "Commands to manually contol the thread flag"
-  (dosync (alter running (fn [& args] true)))
-  (dosync (alter running (fn [& args] false)))
-)
-
 (defn -main
   "Start the show"
   [& args]
@@ -76,3 +71,15 @@
   #_(.start (Thread. (fn [] (while @running (do
                                             (println (first @keysdown))
                                             (Thread/sleep 33)))))))
+
+(comment
+  "Commands to manually contol the thread flag"
+  (dosync (alter running (fn [& args] true)))
+  (dosync (alter running (fn [& args] false)))
+
+  "Close frame"
+  (doto frame
+    remove-key-listeners
+    .hide)
+)
+
