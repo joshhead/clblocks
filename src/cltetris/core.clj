@@ -117,9 +117,17 @@
       (let [x (* col-width  cell-x)
             y (* row-height cell-y)]
         (.setColor g (Color. 0 80 0))
-        (when (= 1 cell)
+        (when (> 0 cell)
           (.fillRect g x y col-width row-height)))))
   grid)
+
+(defn offset
+  [[x-offset y-offset] coords]
+  (map (fn [[x y]] [(+ x x-offset) (+ y y-offset)]) coords))
+
+(defn merge-grid
+  [main sub [x y] cell-merge-fn]
+  main)
 
 (defn -main
   "Start the show"
