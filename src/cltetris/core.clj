@@ -76,12 +76,57 @@
       (.setColor (Color. 0 100 0))
       (.fillRect x y 100 100))))
 
+(defn make-grid
+  [of cols rows]
+  {:cols cols
+   :rows rows
+   :data (into [] (take (* rows cols) (repeat of)))})
+
+(defn random-grid
+  [cols rows]
+  {:cols cols
+   :rows rows
+   :data (into [] (take (* rows cols) (repeatedly #(rand-int 2))))})
+
+(defn print-grid
+  [{:keys [cols data] :as grid}]
+  (doseq [row (partition cols data)]
+    (println (apply str row)))
+  grid)
+
+(defn all-coords
+  ([{:keys [rows cols]}]
+   (all-coords rows cols))
+  ([rows cols]
+    (for [y (range rows) x (range cols)]
+      (vector x y))))
+
+(defn cell-coords
+  [grid]
+  (map (fn [cell coord] {:cell cell :coord coord}) (:data grid) (all-coords grid)))
+
+(defn draw-grid
+  [g {:keys [rows cols data] :as grid}]
+  (let [width  (.-width  (.getClipBounds g))
+        height (.-height (.getClipBounds g))
+        row-height (/ height rows)
+        col-width (/ width cols)]
+    (.setColor g (Color. 200 200 200))
+    (.fillRect g 0 0 width height)
+    (doseq [{cell :cell [cell-x cell-y] :coord} (cell-coords grid)]
+      (let [x (* col-width  cell-x)
+            y (* row-height cell-y)]
+        (.setColor g (Color. 0 80 0))
+        (when (= 1 cell)
+          (.fillRect g x y col-width row-height)))))
+  grid)
+
 (defn -main
   "Start the show"
   [& args]
   (defonce frame (Frame.))
   (.show frame)
-  (.setSize frame 300 300)
+  (.setSize frame 200 440)
   (setup-frame frame)
   (dosync (alter running (constantly true)))
   (let [bdf (partial buffered-draw frame)]
