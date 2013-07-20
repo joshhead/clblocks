@@ -14,6 +14,7 @@
 
 (defn setup-frame
   [frame]
+  (remove-key-listeners frame)
   (let [keycodes {"Up" :up, "Down" :down, "Left" :left, "Right" :right}
         get-event-keyword (fn [e] (get keycodes (KeyEvent/getKeyText (.getKeyCode e)) :center))
         keypressed (fn [this e]
@@ -36,35 +37,49 @@
       (.addKeyListener key-listener)
       (.addWindowListener close-listener))))
 
+(defn buffered-draw
+  "Accepts a frame and a drawing function.
+  Draws on a backing graphic and then copies
+  the backing graphic to the frame.
+  (buffered-draw frame (fn [g] (draw-stuff g)))"
+  [frame f]
+  (let [width    (.getWidth frame)
+        height   (.getHeight frame)
+        back-img (BufferedImage. width height BufferedImage/TYPE_4BYTE_ABGR)
+        back-g   (.createGraphics back-img)
+        g        (.getGraphics frame)]
+    (f back-g)
+    (.drawImage g back-img 0 0 nil))
+  frame)
+
 (defn draw-square
   [frame direction]
-  (let [width (.getWidth frame)
-        height (.getHeight frame)
-        back-img (BufferedImage. width height BufferedImage/TYPE_4BYTE_ABGR)
-        back-g (.createGraphics back-img)
-        g (.getGraphics frame)
-        [x y] (case direction
-                 :up [100 0]
-                 :down [100 200]
-                 :left [0 100]
-                 :right [200 100]
-                 :center [100 100]
-                 [100 100])]
-    (doto back-g
-      (.setColor (Color. 200 200 200))
-      (.fillRect 0 0 width height)
-      (.setColor (Color. 0 100 0))
-      (.fillRect x y 100 100))
-    (.drawImage g back-img 0 0 nil)))
+  (buffered-draw frame
+            (fn [g]
+              (let [width    (.getWidth frame)
+                    height   (.getHeight frame)
+                    [x y] (case direction
+                            :up [100 0]
+                            :down [100 200]
+                            :left [0 100]
+                            :right [200 100]
+                            :center [100 100]
+                            [100 100])]
+                (doto g
+                  (.setColor (Color. 200 200 200))
+                  (.fillRect 0 0 width height)
+                  (.setColor (Color. 0 100 0))
+                  (.fillRect x y 100 100))))))
 
 (defn -main
   "Start the show"
   [& args]
-  (def frame (Frame.))
+  (defonce frame (Frame.))
+  (defonce running (ref true))
   (.show frame)
   (.setSize frame 500 500)
   (setup-frame frame)
-  (def running (ref true))
+  (dosync (alter running (constantly true)))
   (.start (Thread. (fn [] (while @running (do
                                             (draw-square frame (first @keysdown))
                                             (Thread/sleep 33))))))
@@ -74,8 +89,8 @@
 
 (comment
   "Commands to manually contol the thread flag"
-  (dosync (alter running (fn [& args] true)))
-  (dosync (alter running (fn [& args] false)))
+  (dosync (alter running (constantly true)))
+  (dosync (alter running (constantly false)))
 
   "Close frame"
   (doto frame
