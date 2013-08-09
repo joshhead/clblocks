@@ -1,8 +1,8 @@
 (ns cltetris.core
-  ( :import (java.util Date)
-            (java.awt Frame Graphics Color)
-            (java.awt.event KeyListener KeyEvent WindowAdapter)
-            (java.awt.image BufferedImage)))
+  (:import (java.util Date)
+           (java.awt Frame Graphics Color)
+           (java.awt.event KeyListener KeyEvent WindowAdapter)
+           (java.awt.image BufferedImage)))
 
 (defonce keysdown (ref #{}))
 (defonce running (ref true))
