@@ -71,6 +71,9 @@
      (async/close! cancel-keys)
      (.hide frame))))
 
+(defprotocol GridRenderer
+  (draw-grid [this grid]))
+
 (defn buffered-draw
   "Accepts a frame and a drawing function.
   Draws on a backing graphic and then copies
@@ -109,49 +112,57 @@
       (.fillRect x y 100 100))))
 
 (defn make-grid
+  "of: what to make a grid of e.g. 10x10 grid of 0's (make-grid 0 10 10)"
   [of cols rows]
-  {:cols cols
-   :rows rows
-   :data (into [] (take (* rows cols) (repeat of)))})
+  (let [row (vec (take cols (repeat of)))]
+    (vec (take rows (repeat row)))))
 
 (defn random-grid
   [cols rows]
-  {:cols cols
-   :rows rows
-   :data (into [] (take (* rows cols) (repeatedly #(rand-int 2))))})
+  (let [row (fn [] (vec (take cols (repeatedly #(rand-int 2)))))]
+    (vec (take rows (repeatedly row)))))
 
 (defn print-grid
-  [{:keys [cols data] :as grid}]
-  (doseq [row (partition cols data)]
+  [grid]
+  (doseq [row grid]
     (println (apply str row)))
   grid)
 
 (defn all-coords
-  ([{:keys [rows cols]}]
-   (all-coords rows cols))
+  "For a given width and height, or a grid of a given width and height,
+  return a list of vectors [row col] for every coordinate on the grid."
+  ([grid]
+     (let [rows (count grid)
+           cols (count (first grid))]
+       (all-coords cols rows)))
   ([rows cols]
-    (for [y (range rows) x (range cols)]
-      (vector x y))))
+     (for [y (range rows) x (range cols)]
+       (vector x y))))
 
-(defn cell-coords
-  [grid]
-  (map (fn [cell coord] {:cell cell :coord coord}) (:data grid) (all-coords grid)))
-
-(defn draw-grid
-  [g {:keys [rows cols data] :as grid}]
-  (let [width  (.-width  (.getClipBounds g))
-        height (.-height (.getClipBounds g))
+(defn frame-draw-grid
+  "Draw a grid stretched to fit a java.awt.Frame"
+  [frame grid]
+  (let [g (.getGraphics frame)
+        width  (.getWidth frame)
+        height (.getHeight frame)
+        rows (count grid)
+        cols (count (first grid))
         row-height (/ height rows)
         col-width (/ width cols)]
     (.setColor g (Color. 200 200 200))
     (.fillRect g 0 0 width height)
-    (doseq [{cell :cell [cell-x cell-y] :coord} (cell-coords grid)]
-      (let [x (* col-width  cell-x)
-            y (* row-height cell-y)]
+    (doseq [[row col :as coord] (all-coords grid)]
+      (let [x (* col-width  col)
+            y (* row-height row)
+            cell-val (get-in grid coord)]
         (.setColor g (Color. 0 80 0))
-        (when (> 0 cell)
+        (when (= cell-val 1)
           (.fillRect g x y col-width row-height)))))
   grid)
+
+(extend-protocol GridRenderer
+  java.awt.Frame
+  (draw-grid [this grid] (frame-draw-grid this grid)))
 
 (defn offset
   [[x-offset y-offset] coords]
