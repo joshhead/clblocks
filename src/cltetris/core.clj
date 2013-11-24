@@ -71,33 +71,22 @@
      (async/close! cancel-keys)
      (.hide frame))))
 
-(defprotocol GridRenderer
-  (draw-grid [this grid]))
+(defn backing-image
+  [frame]
+  (let [width (.getWidth frame)
+        height (.getHeight frame)]
+    (BufferedImage. width height BufferedImage/TYPE_4BYTE_ABGR)))
 
-(defn buffered-draw
-  "Accepts a frame and a drawing function.
-  Draws on a backing graphic and then copies
-  the backing graphic to the frame.
+(defn draw-backing-image
+  [frame img]
+  (.drawImage (.getGraphics frame) img 0 0 nil))
 
-  Backing graphic will have clipRect set to the
-  size of the frame.
-
-  (buffered-draw frame (fn [g] (draw-stuff g)))"
-  [frame f]
-  (let [width    (.getWidth frame)
-        height   (.getHeight frame)
-        back-img (BufferedImage. width height BufferedImage/TYPE_4BYTE_ABGR)
-        back-g   (.createGraphics back-img)
-        g        (.getGraphics frame)]
-    (.setClip back-g 0 0 width height)
-    (f back-g)
-    (.drawImage g back-img 0 0 nil))
-  frame)
-
-(defn draw-square
-  [g direction]
-  (let [width  (.-width  (.getClipBounds g))
-        height (.-height (.getClipBounds g))
+(defn frame-draw-square
+  [frame direction]
+  (let [img (backing-image frame)
+        g (.createGraphics img)
+        width  (.getWidth frame)
+        height (.getHeight frame)
         [x y]  (case direction
                  :up [100 0]
                  :down [100 200]
@@ -109,7 +98,9 @@
       (.setColor (Color. 200 200 200))
       (.fillRect 0 0 width height)
       (.setColor (Color. 0 100 0))
-      (.fillRect x y 100 100))))
+      (.fillRect x y 100 100))
+
+    (draw-backing-image frame img)))
 
 (defn make-grid
   "of: what to make a grid of e.g. 10x10 grid of 0's (make-grid 0 10 10)"
@@ -142,7 +133,8 @@
 (defn frame-draw-grid
   "Draw a grid stretched to fit a java.awt.Frame"
   [frame grid]
-  (let [g (.getGraphics frame)
+  (let [img (backing-image frame)
+        g (.createGraphics img)
         width  (.getWidth frame)
         height (.getHeight frame)
         rows (count grid)
@@ -157,12 +149,9 @@
             cell-val (get-in grid coord)]
         (.setColor g (Color. 0 80 0))
         (when (= cell-val 1)
-          (.fillRect g x y col-width row-height)))))
+          (.fillRect g x y col-width row-height))))
+    (draw-backing-image frame img))
   grid)
-
-(extend-protocol GridRenderer
-  java.awt.Frame
-  (draw-grid [this grid] (frame-draw-grid this grid)))
 
 (defn offset
   [[x-offset y-offset] coords]
@@ -179,12 +168,12 @@
         bdf (partial buffered-draw frame)
         [keys cancel-keys] (setup-key-listener frame)
         closec (setup-close-listener frame)]
-    (bdf #(draw-square % :center))
+    (frame-draw-square frame :center)
     (async/go (loop []
                 (let [key (async/<! keys)]
                   (if (= (key 1) :press)
-                    (bdf #(draw-square % (key 0)))
-                    (bdf #(draw-square % :center)))
+                    (frame-draw-square frame (key 0))
+                    (frame-draw-square frame :center))
                   (when-not (nil? key)
                     (recur)))))
     (async/go
