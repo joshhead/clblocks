@@ -1,43 +1,75 @@
 (ns cltetris.core
-  (:import (java.util Date)
-           (java.awt Frame Graphics Color)
-           (java.awt.event KeyListener KeyEvent WindowAdapter)
-           (java.awt.image BufferedImage)))
+  (:require [clojure.core.async :as async])
+  (:import [java.util Date]
+           [java.awt Frame Graphics Color]
+           [java.awt.event KeyListener KeyEvent WindowAdapter]
+           [java.awt.image BufferedImage]))
 
-(defonce keysdown (ref #{}))
-(defonce running (ref true))
+(def keycodes {"Up" :up
+               "Down" :down
+               "Left" :left
+               "Right" :right})
 
-(defn remove-key-listeners
-  [component]
-  (for [l (.getKeyListeners component)]
-    (.removeKeyListener component l))
-  component)
+(defn new-frame
+  ([]
+     (new-frame 200 440))
+  ([width height]
+     (let [frame (Frame.)]
+       (doto frame
+         (.setSize width height)
+         (.show)))))
 
-(defn setup-frame
+(defn get-event-keyword
+  [e]
+  (get keycodes (KeyEvent/getKeyText (.getKeyCode e)) nil))
+
+(defn setup-key-listener
   [frame]
-  (remove-key-listeners frame)
-  (let [keycodes {"Up" :up, "Down" :down, "Left" :left, "Right" :right}
-        get-event-keyword (fn [e] (get keycodes (KeyEvent/getKeyText (.getKeyCode e)) :center))
-        keypressed (fn [this e]
-                     (dosync (alter keysdown conj (get-event-keyword e))))
-        keyreleased (fn [this e]
-                      (dosync (alter keysdown disj (get-event-keyword e))))
+  (let [event-chan (async/chan)
+        cancel-chan (async/chan)
         key-listener (reify
                        java.awt.event.KeyListener
-                       (keyPressed [this e]
-                         (keypressed this e))
-                       (keyReleased [this e]
-                         (keyreleased this e))
+                       (keyPressed [_ e]
+                         (when-let [event-kw (get-event-keyword e)]
+                           (async/put! event-chan [event-kw :press])))
+                       (keyReleased [_ e]
+                         (when-let [event-kw (get-event-keyword e)]
+                           (async/put! event-chan [event-kw :release])))
                        (keyTyped [this e]
-                         nil))
-        close-listener (proxy [WindowAdapter] []
-                         (windowClosing
-                           [event]
-                           (dosync (alter running (constantly false)))
-                           (System/exit 0)))]
-    (doto frame
-      (.addKeyListener key-listener)
-      (.addWindowListener close-listener))))
+                         nil))]
+    (.addKeyListener frame key-listener)
+
+    ; On writing to or closing of cancel-chan, remove key listener
+    (async/go
+     (async/<! cancel-chan)
+     (async/close! cancel-chan)
+     (.removeKeyListener frame key-listener))
+
+    [event-chan cancel-chan]))
+
+(defn setup-close-listener
+  [frame]
+  (let [c (async/chan)]
+    (.addWindowListener frame (proxy [WindowAdapter] []
+                                (windowClosing [event]
+                                  (async/put! c :close))))
+    c))
+
+(defn demo-events
+  "Create a frame and listen for events, printing them to stdout"
+  []
+  (let [frame (new-frame)
+        [keys cancel-keys] (setup-key-listener frame)
+        closec (setup-close-listener frame)]
+    (async/go (loop []
+                (let [key (async/<! keys)]
+                  (println key)
+                  (when-not (nil? key)
+                    (recur)))))
+    (async/go
+     (async/<! closec)
+     (async/close! cancel-keys)
+     (.hide frame))))
 
 (defn buffered-draw
   "Accepts a frame and a drawing function.
@@ -132,27 +164,25 @@
 (defn -main
   "Start the show"
   [& args]
-  (defonce frame (Frame.))
-  (.show frame)
-  (.setSize frame 200 440)
-  (setup-frame frame)
-  (dosync (alter running (constantly true)))
-  (let [bdf (partial buffered-draw frame)]
-    (.start (Thread. (fn [] (while @running (do
-                                              (bdf #(draw-square % (first @keysdown)))
-                                              (Thread/sleep 33))))))))
+  (let [frame (new-frame 300 300)
+        bdf (partial buffered-draw frame)
+        [keys cancel-keys] (setup-key-listener frame)
+        closec (setup-close-listener frame)]
+    (bdf #(draw-square % :center))
+    (async/go (loop []
+                (let [key (async/<! keys)]
+                  (if (= (key 1) :press)
+                    (bdf #(draw-square % (key 0)))
+                    (bdf #(draw-square % :center)))
+                  (when-not (nil? key)
+                    (recur)))))
+    (async/go
+     (async/<! closec)
+     (async/close! cancel-keys)
+     (.hide frame))))
 
 (comment
-  "Commands to manually contol the thread flag"
-  (dosync (alter running (constantly true)))
-  (dosync (alter running (constantly false)))
-
-  (.start (Thread. (fn [] (while @running (do
-                                            (println (first @keysdown))
-                                            (Thread/sleep 33))))))
-  "Close frame"
-  (doto frame
-    remove-key-listeners
-    .hide)
+  (demo-events)
+  (-main)
 )
 
