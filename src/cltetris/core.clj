@@ -10,6 +10,9 @@
                "Left" :left
                "Right" :right})
 
+(def field-width 10)
+(def field-height 22)
+
 (defn new-frame
   ([]
      (new-frame 200 440))
@@ -104,17 +107,17 @@
         width  (.getWidth frame)
         height (.getHeight frame)
         [x y]  (case direction
-                 :up [100 0]
-                 :down [100 200]
-                 :left [0 100]
-                 :right [200 100]
-                 :center [100 100]
-                 [100 100])]
+                 :up [50 0]
+                 :down [50 100]
+                 :left [0 50]
+                 :right [100 50]
+                 :center [50 50]
+                 [50 50])]
     (doto g
       (.setColor (Color. 200 200 200))
       (.fillRect 0 0 width height)
       (.setColor (Color. 0 100 0))
-      (.fillRect x y 100 100))
+      (.fillRect x y 50 50))
 
     (draw-backing-image frame img)))
 
@@ -179,13 +182,20 @@
   [main sub [x y] cell-merge-fn]
   main)
 
+(defn n-rows-dirty-grid
+  [n]
+  (vec (concat
+        (make-grid 0 field-width (- field-height n))
+        (random-grid field-width n))))
+
 (defn play
   []
-  (let [frame (new-frame 300 300)
+  (let [frame (new-frame 200 440)
         [keys cancel-keys] (setup-key-listener frame)
         closec (setup-close-listener frame)
-        quitc (async/chan)]
-    (frame-draw-square frame :center)
+        quitc (async/chan)
+        grid (n-rows-dirty-grid 3)]
+    (frame-draw-grid frame grid)
     (async/go (loop [i 0]
                 (let [key (async/<! keys)]
                   (if (= (key 1) :press)
