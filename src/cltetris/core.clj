@@ -24,7 +24,12 @@
   (get keycodes (KeyEvent/getKeyText (.getKeyCode e)) nil))
 
 (defn setup-key-listener
-  [frame]
+  "Returns a vector of two channels. The first will get return vectors of
+  [direction action] where direction is in #{:up :down :left :right} and
+  action is in #{:press :release}. To remove key listeners, put a channel
+  on the second channel. When it is done cleaning up, it will close the
+  channel it received."
+  [^Frame frame]
   (let [event-chan (async/chan)
         cancel-chan (async/chan)
         key-listener (reify
@@ -39,16 +44,19 @@
                          nil))]
     (.addKeyListener frame key-listener)
 
-    ; On writing to or closing of cancel-chan, remove key listener
     (async/go
-     (async/<! cancel-chan)
-     (async/close! cancel-chan)
-     (.removeKeyListener frame key-listener))
+     (let [cancelled-chan (async/<! cancel-chan)]
+       (.removeKeyListener frame key-listener)
+       (async/close! event-chan)
+       (async/close! cancel-chan)
+       (async/close! cancelled-chan)))
 
     [event-chan cancel-chan]))
 
 (defn setup-close-listener
-  [frame]
+  "Returns a channel that will have :close put on it when
+   the close button of a frame is clicked."
+  [^Frame frame]
   (let [c (async/chan)]
     (.addWindowListener frame (proxy [WindowAdapter] []
                                 (windowClosing [event]
@@ -67,21 +75,29 @@
                   (when-not (nil? key)
                     (recur)))))
     (async/go
-     (async/<! closec)
-     (async/close! cancel-keys)
-     (.hide frame))))
+     (let [cancelled (async/chan)]
+       (async/<! closec)
+       (async/>! cancel-keys cancelled)
+       (async/<! cancelled)
+       (.hide frame)))
+    frame))
 
 (defn backing-image
-  [frame]
+  "Given a frame create a new BufferedImage.
+  Get a Graphics with (.createGraphics img) and draw to that.
+  When finished, write draw the backing image to the frame."
+  [^Frame frame]
   (let [width (.getWidth frame)
         height (.getHeight frame)]
     (BufferedImage. width height BufferedImage/TYPE_4BYTE_ABGR)))
 
 (defn draw-backing-image
-  [frame img]
+  "Draw a BufferedImage to a Frame"
+  [^Frame frame ^BufferedImage img]
   (.drawImage (.getGraphics frame) img 0 0 nil))
 
 (defn frame-draw-square
+  "Draw a square in one of 5 positions at a fixed size"
   [frame direction]
   (let [img (backing-image frame)
         g (.createGraphics img)
@@ -109,11 +125,13 @@
     (vec (take rows (repeat row)))))
 
 (defn random-grid
+  "Generate a new grid of the given size filled randomly with 1's and 0's"
   [cols rows]
   (let [row (fn [] (vec (take cols (repeatedly #(rand-int 2)))))]
     (vec (take rows (repeatedly row)))))
 
 (defn print-grid
+  "Print a grid as one row per line with no spaces"
   [grid]
   (doseq [row grid]
     (println (apply str row)))
@@ -161,28 +179,35 @@
   [main sub [x y] cell-merge-fn]
   main)
 
-(defn -main
-  "Start the show"
-  [& args]
+(defn play
+  []
   (let [frame (new-frame 300 300)
-        bdf (partial buffered-draw frame)
         [keys cancel-keys] (setup-key-listener frame)
-        closec (setup-close-listener frame)]
+        closec (setup-close-listener frame)
+        quitc (async/chan)]
     (frame-draw-square frame :center)
-    (async/go (loop []
+    (async/go (loop [i 0]
                 (let [key (async/<! keys)]
                   (if (= (key 1) :press)
                     (frame-draw-square frame (key 0))
                     (frame-draw-square frame :center))
                   (when-not (nil? key)
-                    (recur)))))
+                    (recur (inc i))))))
     (async/go
-     (async/<! closec)
-     (async/close! cancel-keys)
-     (.hide frame))))
+     (let [cancelled (async/chan)]
+       (async/<! closec)
+       (.hide frame)
+       (async/close! quitc)))
+
+    quitc))
+
+(defn -main
+  [& args]
+  (async/<!! (play))
+  (System/exit 0))
 
 (comment
   (demo-events)
-  (-main)
+  (play)
 )
 
