@@ -214,8 +214,12 @@
   []
   {:grid (n-rows-dirty-grid 3)
    :position [0 0]
-   :piece tetrominos/o
+   :piece tetrominos/t
    :next tetrominos/o})
+
+(defn move-clockwise
+  [game]
+  (update-in game [:piece] tetrominos/rotate))
 
 (defn move-right
   [game]
@@ -234,6 +238,7 @@
   [game input]
 
   (case input
+    :up (move-clockwise game)
     :left (move-left game)
     :right (move-right game)
     :down (move-down game)

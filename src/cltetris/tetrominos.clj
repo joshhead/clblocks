@@ -13,13 +13,14 @@
    [0 0 1 0]])
 
 (def o
-  [[0 0 0 0]
-   [0 1 1 0]
-   [0 1 1 0]
-   [0 0 0 0]])
+  [[1 1]
+   [1 1]])
 
 (def t
-  [[0 0 0 0]
-   [0 0 0 0]
-   [0 1 0 0]
-   [1 1 1 0]])
+  [[0 1 0]
+   [1 1 1]
+   [0 0 0]])
+
+(defn rotate
+  [tetromino]
+  (vec (apply map vector (reverse tetromino))))
