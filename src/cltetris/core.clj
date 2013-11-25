@@ -155,7 +155,8 @@
 (defn frame-draw-grid
   "Draw a grid stretched to fit a java.awt.Frame"
   [frame grid]
-  (let [g (.getGraphics frame)
+  (let [img (backing-image frame)
+        g (.createGraphics img)
         width  (.getWidth frame)
         height (.getHeight frame)
         rows (count grid)
@@ -169,8 +170,9 @@
             y (* row-height row)
             cell-val (get-in grid coord)]
         (.setColor g (Color. 0 80 0))
-        (when (= cell-val 1)
-          (.fillRect g x y col-width row-height)))))
+        (when (> cell-val 0)
+          (.fillRect g x y col-width row-height))))
+    (draw-backing-image frame img))
   grid)
 
 (defn empty-row
@@ -237,15 +239,27 @@
     :down (move-down game)
     game))
 
+(defn tick-chan
+  [ms]
+  (let [tickc (async/chan)]
+    (async/go
+     (loop []
+       (async/<! (async/timeout ms))
+       (async/>! tickc :tick)
+       (recur)))
+    tickc))
+
 (defn play
   []
   (let [frame (new-frame 200 440)
         [keys cancel-keys] (setup-key-listener frame)
+        ticker (tick-chan 500)
         closec (setup-close-listener frame)
         quitc (async/chan)]
 
     (async/go (loop [game (new-game)]
-                (let [key (async/<! keys)]
+                (let [[val port] (async/alts! [keys ticker])
+                      key (if (= port keys) val [:down :press])]
                   (when (= (key 1) :press)
                     (let [next-game (step-game game (key 0))]
                       (frame-draw-grid frame (merge-grid (:grid next-game) (:piece next-game) (:position next-game)))))
