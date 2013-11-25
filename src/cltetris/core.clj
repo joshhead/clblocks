@@ -9,7 +9,8 @@
 (def keycodes {"Up" :up
                "Down" :down
                "Left" :left
-               "Right" :right})
+               "Right" :right
+               "Escape" :escape})
 
 (def field-width 10)
 (def field-height 22)
@@ -29,7 +30,7 @@
 
 (defn setup-key-listener
   "Returns a vector of two channels. The first will get return vectors of
-  [direction action] where direction is in #{:up :down :left :right} and
+  [direction action] where direction is in #{:up :down :left :right :escape} and
   action is in #{:press :release}. To remove key listeners, put a channel
   on the second channel. When it is done cleaning up, it will close the
   channel it received."
@@ -268,10 +269,11 @@
                   (when (= (key 1) :press)
                     (let [next-game (step-game game (key 0))]
                       (frame-draw-grid frame (merge-grid (:grid next-game) (:piece next-game) (:position next-game)))))
-                  (when-not (nil? key)
+                  (when-not (or (nil? key) (= (key 0) :escape))
                     (if (= (key 1) :press)
                       (recur (step-game game (key 0)))
-                      (recur game))))))
+                      (recur game)))))
+              (async/>! closec :quit))
 
     (async/go
      (let [cancelled (async/chan)]
