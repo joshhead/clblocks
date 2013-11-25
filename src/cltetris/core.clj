@@ -1,5 +1,6 @@
 (ns cltetris.core
-  (:require [clojure.core.async :as async])
+  (:require [cltetris.tetrominos :as tetrominos]
+            [clojure.core.async :as async])
   (:import [java.util Date]
            [java.awt Frame Graphics Color]
            [java.awt.event KeyListener KeyEvent WindowAdapter]
@@ -154,8 +155,7 @@
 (defn frame-draw-grid
   "Draw a grid stretched to fit a java.awt.Frame"
   [frame grid]
-  (let [img (backing-image frame)
-        g (.createGraphics img)
+  (let [g (.getGraphics frame)
         width  (.getWidth frame)
         height (.getHeight frame)
         rows (count grid)
@@ -170,17 +170,37 @@
             cell-val (get-in grid coord)]
         (.setColor g (Color. 0 80 0))
         (when (= cell-val 1)
-          (.fillRect g x y col-width row-height))))
-    (draw-backing-image frame img))
+          (.fillRect g x y col-width row-height)))))
   grid)
 
-(defn offset
-  [[x-offset y-offset] coords]
-  (map (fn [[x y]] [(+ x x-offset) (+ y y-offset)]) coords))
+(defn empty-row
+  [length]
+  (vec (take length (repeat 0))))
+
+; Does not yet handle negative offsets
+(defn expand-row
+  "row: vector to expand
+  length: length to expand to, padded with 0's
+  offset: precede with this many 0's"
+  [row length offset]
+  (let [before (take offset (repeat 0))
+        after (take (- length offset (count row)) (repeat 0))]
+    (vec (take length (concat before row after)))))
+
+(defn expand-grid
+  [grid rows cols [row col :as offset]]
+  (let [before (take row (repeatedly #(empty-row cols)))
+        middle (map #(expand-row % cols col) grid)
+        after (take (- rows row (count grid)) (repeatedly #(empty-row cols)))]
+    (vec (concat before middle after))
+))
 
 (defn merge-grid
-  [main sub [x y] cell-merge-fn]
-  main)
+  [main sub [row col :as offset]]
+  (let [rows (count main)
+        cols (count (first main))
+        expanded-sub (expand-grid sub rows cols offset)]
+    (vec (map #(vec (map + %1 %2)) main expanded-sub))))
 
 (defn n-rows-dirty-grid
   [n]
@@ -188,21 +208,52 @@
         (make-grid 0 field-width (- field-height n))
         (random-grid field-width n))))
 
+(defn new-game
+  []
+  {:grid (n-rows-dirty-grid 3)
+   :position [0 0]
+   :piece tetrominos/o
+   :next tetrominos/o})
+
+(defn move-right
+  [game]
+  (update-in game [:position 1] inc))
+
+(defn move-left
+  [game]
+  (update-in game [:position 1] dec))
+
+(defn move-down
+  [game]
+  (update-in game [:position 0] inc))
+
+(defn step-game
+  "Advance game one frame"
+  [game input]
+
+  (case input
+    :left (move-left game)
+    :right (move-right game)
+    :down (move-down game)
+    game))
+
 (defn play
   []
   (let [frame (new-frame 200 440)
         [keys cancel-keys] (setup-key-listener frame)
         closec (setup-close-listener frame)
-        quitc (async/chan)
-        grid (n-rows-dirty-grid 3)]
-    (frame-draw-grid frame grid)
-    (async/go (loop [i 0]
+        quitc (async/chan)]
+
+    (async/go (loop [game (new-game)]
                 (let [key (async/<! keys)]
-                  (if (= (key 1) :press)
-                    (frame-draw-square frame (key 0))
-                    (frame-draw-square frame :center))
+                  (when (= (key 1) :press)
+                    (let [next-game (step-game game (key 0))]
+                      (frame-draw-grid frame (merge-grid (:grid next-game) (:piece next-game) (:position next-game)))))
                   (when-not (nil? key)
-                    (recur (inc i))))))
+                    (if (= (key 1) :press)
+                      (recur (step-game game (key 0)))
+                      (recur game))))))
+
     (async/go
      (let [cancelled (async/chan)]
        (async/<! closec)
