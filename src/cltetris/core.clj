@@ -218,6 +218,11 @@
    :piece tetrominos/t
    :next tetrominos/o})
 
+(defn out-of-bounds?
+  "True if :position puts all or part of :piece outside of :grid"
+  [game]
+  false)
+
 (defn move-clockwise
   [game]
   (update-in game [:piece] tetrominos/rotate))
