@@ -211,6 +211,17 @@
   (let [grid (merge-grid (:grid game) (:piece game) (:position game))]
     (some (partial < 1) (apply concat grid))))
 
+(defn lock-piece
+  [{:keys [grid piece position] :as game}]
+  (assoc game :grid (merge-grid grid piece position)))
+
+(defn activate-next
+  [{:keys [piece next] :as game}]
+  (-> game
+      (assoc :piece next)
+      (assoc :next (tetrominos/random))
+      (assoc :position [0 0])))
+
 (defn n-rows-dirty-grid
   [n]
   (vec (concat
@@ -221,8 +232,8 @@
   []
   {:grid (n-rows-dirty-grid 3)
    :position [0 0]
-   :piece tetrominos/t
-   :next tetrominos/o})
+   :piece (tetrominos/random)
+   :next (tetrominos/random)})
 
 (defn out-of-bounds?
   "True if :position puts all or part of :piece outside of :grid"
@@ -245,9 +256,7 @@
   [game]
   (let [moved (update-in game [:position 0] inc)]
     (if (overlapping? moved)
-      (let [game-merged (update-in game [:grid] #(merge-grid % (:piece game) (:position game)))
-            game-new-piece (update-in game-merged [:position] (constantly [0 0]))]
-        game-new-piece)
+      (-> game lock-piece activate-next)
       moved)))
 
 (defn step-game

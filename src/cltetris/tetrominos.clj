@@ -24,3 +24,10 @@
 (defn rotate
   [tetromino]
   (vec (apply map vector (reverse tetromino))))
+
+(def all
+  [i o t])
+
+(defn random
+  []
+  (nth all (rand-int (count all))))
