@@ -180,15 +180,15 @@
   [length]
   (vec (take length (repeat 0))))
 
-; Does not yet handle negative offsets
 (defn expand-row
   "row: vector to expand
   length: length to expand to, padded with 0's
-  offset: precede with this many 0's"
+  offset: precede with this many 0's. negative offsets take from the head"
   [row length offset]
-  (let [before (take offset (repeat 0))
+  (let [before (if (pos? offset) (take offset (repeat 0)) [])
+        middle (if (pos? offset) row (drop (- offset) row))
         after (take (- length offset (count row)) (repeat 0))]
-    (vec (take length (concat before row after)))))
+    (vec (take length (concat before middle after)))))
 
 (defn expand-grid
   [grid rows cols [row col :as offset]]
