@@ -205,6 +205,12 @@
         expanded-sub (expand-grid sub rows cols offset)]
     (vec (map #(vec (map + %1 %2)) main expanded-sub))))
 
+(defn overlapping?
+  "True if the game piece overlaps filled space on the grid at its current position"
+  [game]
+  (let [grid (merge-grid (:grid game) (:piece game) (:position game))]
+    (some (partial < 1) (apply concat grid))))
+
 (defn n-rows-dirty-grid
   [n]
   (vec (concat
@@ -237,7 +243,12 @@
 
 (defn move-down
   [game]
-  (update-in game [:position 0] inc))
+  (let [moved (update-in game [:position 0] inc)]
+    (if (overlapping? moved)
+      (let [game-merged (update-in game [:grid] #(merge-grid % (:piece game) (:position game)))
+            game-new-piece (update-in game-merged [:position] (constantly [0 0]))]
+        game-new-piece)
+      moved)))
 
 (defn step-game
   "Advance game one frame"
