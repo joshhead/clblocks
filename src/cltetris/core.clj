@@ -215,6 +215,23 @@
   [{:keys [grid piece position] :as game}]
   (assoc game :grid (merge-grid grid piece position)))
 
+(defn row-full?
+  [row]
+  (every? (partial < 0) row))
+
+(defn clear-rows
+  "Remove full rows from the field"
+  [grid]
+  (let [cols (count (first grid))
+        n-full-rows (count (filter row-full? grid))
+        new-rows (take n-full-rows (repeatedly #(empty-row cols)))
+        cleared-grid (filterv (complement row-full?) grid)]
+    (vec (concat new-rows cleared-grid))))
+
+(defn game-clear-rows
+  [{:keys [grid] :as game}]
+  (assoc game :grid (clear-rows grid)))
+
 (defn activate-next
   [{:keys [piece next] :as game}]
   (-> game
@@ -256,7 +273,7 @@
   [game]
   (let [moved (update-in game [:position 0] inc)]
     (if (overlapping? moved)
-      (-> game lock-piece activate-next)
+      (-> game lock-piece game-clear-rows activate-next)
       moved)))
 
 (defn step-game
