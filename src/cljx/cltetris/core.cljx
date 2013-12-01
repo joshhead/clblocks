@@ -4,17 +4,26 @@
             #+clj [clojure.core.async :as async :refer [go]]
             #+cljs [cljs.core.async :as async]
             #+cljs [goog.dom :as dom]
-            #+cljs [goog.events :as events])
+            #+cljs [goog.events :as events]
+            #+cljs [goog.events.KeyCodes])
   #+cljs (:require-macros [cljs.core.async.macros :refer [go]])
   #+clj (:import [java.awt Frame Graphics Color]
                  [java.awt.event KeyListener KeyEvent WindowAdapter]
                  [java.awt.image BufferedImage]))
 
+#+clj
 (def keycodes {"Up" :up
                "Down" :down
                "Left" :left
                "Right" :right
                "Escape" :escape})
+
+#+cljs
+(def keycodes {goog.events.KeyCodes.UP :up
+               goog.events.KeyCodes.DOWN :down
+               goog.events.KeyCodes.LEFT :left
+               goog.events.KeyCodes.RIGHT :right
+               goog.events.KeyCodes.ESC :escape})
 
 (def field-width 10)
 (def field-height 22)
@@ -34,11 +43,17 @@
   ([]
      (new-frame 200 440))
   ([width height]
-     (dom/getElement "field")))
+     (dom/getElement "cltetris")))
 
+#+clj
 (defn get-event-keyword
   [e]
   (get keycodes (KeyEvent/getKeyText (.getKeyCode e)) nil))
+
+#+cljs
+(defn get-event-keyword
+  [e]
+  (get keycodes (.-keyCode e) nil))
 
 #+clj
 (defn setup-key-listener
@@ -74,7 +89,24 @@
 #+cljs
 (defn setup-key-listener
   [frame]
-  [(async/chan) (async/chan)])
+  (let [event-chan (async/chan)
+        cancel-chan (async/chan)]
+
+    (goog.events.listen
+     js/document
+     goog.events.EventType.KEYDOWN
+     (fn [e]
+       (when-let [event-kw (get-event-keyword e)]
+         (async/put! event-chan [event-kw :press]))))
+
+    (goog.events.listen
+     js/document
+     goog.events.EventType.KEYUP
+     (fn [e]
+       (when-let [event-kw (get-event-keyword e)]
+         (async/put! event-chan [event-kw :release]))))
+
+    [event-chan cancel-chan]))
 
 #+clj
 (defn setup-close-listener
@@ -211,7 +243,9 @@
 #+cljs
 (defn frame-draw-grid
   [frame grid]
-  (dom/setTextContent frame (grid-string grid)))
+  (let [el-grid (mapv (fn [row] (mapv #(if (< 0 %) "<div class='cltetris__cell--full'></div>" "<div class='cltetris__cell--empty'></div>") row)) grid)
+        grid-html (apply str (map #(str "<div class='row'>" % "</div>") (map #(apply str %) el-grid)))]
+    (set! (.-innerHTML frame) grid-html)))
 
 (defn empty-row
   [length]

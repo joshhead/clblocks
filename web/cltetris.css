@@ -1,0 +1,23 @@
+.cltetris {
+    font-size: 22px;
+}
+
+.cltetris * {
+    margin: 0;
+    padding: 0;
+    line-height: 0;
+}
+
+[class*=cltetris__cell] {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+}
+
+.cltetris__cell--full {
+    background-color: #008000;
+}
+
+.cltetris__cell--empty {
+    background-color: #C8C8C8;
+}
