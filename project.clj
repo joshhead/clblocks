@@ -26,5 +26,5 @@
 
   :cljsbuild {:builds [{:source-paths ["src/cljs" "target/generated/cljs"]
                         :compiler {:output-to "web/cltetris.js"
-                                   :optimizations :advanced
+                                   :optimizations :simple
                                    :pretty-print true}}]})

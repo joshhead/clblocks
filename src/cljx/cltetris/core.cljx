@@ -1,10 +1,14 @@
 (ns cltetris.core
   (:require [cltetris.tetrominos :as tetrominos]
-            [clojure.core.async :as async])
-  (:import [java.util Date]
-           [java.awt Frame Graphics Color]
-           [java.awt.event KeyListener KeyEvent WindowAdapter]
-           [java.awt.image BufferedImage]))
+            [clojure.string :as clojure.string]
+            #+clj [clojure.core.async :as async :refer [go]]
+            #+cljs [cljs.core.async :as async]
+            #+cljs [goog.dom :as dom]
+            #+cljs [goog.events :as events])
+  #+cljs (:require-macros [cljs.core.async.macros :refer [go]])
+  #+clj (:import [java.awt Frame Graphics Color]
+                 [java.awt.event KeyListener KeyEvent WindowAdapter]
+                 [java.awt.image BufferedImage]))
 
 (def keycodes {"Up" :up
                "Down" :down
@@ -15,6 +19,7 @@
 (def field-width 10)
 (def field-height 22)
 
+#+clj
 (defn new-frame
   ([]
      (new-frame 200 440))
@@ -24,10 +29,18 @@
          (.setSize width height)
          (.show)))))
 
+#+cljs
+(defn new-frame
+  ([]
+     (new-frame 200 440))
+  ([width height]
+     (dom/getElement "field")))
+
 (defn get-event-keyword
   [e]
   (get keycodes (KeyEvent/getKeyText (.getKeyCode e)) nil))
 
+#+clj
 (defn setup-key-listener
   "Returns a vector of two channels. The first will get return vectors of
   [direction action] where direction is in #{:up :down :left :right :escape} and
@@ -49,7 +62,7 @@
                          nil))]
     (.addKeyListener frame key-listener)
 
-    (async/go
+    (go
      (let [cancelled-chan (async/<! cancel-chan)]
        (.removeKeyListener frame key-listener)
        (async/close! event-chan)
@@ -58,6 +71,12 @@
 
     [event-chan cancel-chan]))
 
+#+cljs
+(defn setup-key-listener
+  [frame]
+  [(async/chan) (async/chan)])
+
+#+clj
 (defn setup-close-listener
   "Returns a channel that will have :close put on it when
    the close button of a frame is clicked."
@@ -68,18 +87,23 @@
                                   (async/put! c :close))))
     c))
 
+#+cljs
+(defn setup-close-listener
+  [frame]
+  (async/chan))
+
 (defn demo-events
   "Create a frame and listen for events, printing them to stdout"
   []
   (let [frame (new-frame)
         [keys cancel-keys] (setup-key-listener frame)
         closec (setup-close-listener frame)]
-    (async/go (loop []
+    (go (loop []
                 (let [key (async/<! keys)]
                   (println key)
                   (when-not (nil? key)
                     (recur)))))
-    (async/go
+    (go
      (let [cancelled (async/chan)]
        (async/<! closec)
        (async/>! cancel-keys cancelled)
@@ -87,6 +111,7 @@
        (.hide frame)))
     frame))
 
+#+clj
 (defn backing-image
   "Given a frame create a new BufferedImage.
   Get a Graphics with (.createGraphics img) and draw to that.
@@ -96,11 +121,13 @@
         height (.getHeight frame)]
     (BufferedImage. width height BufferedImage/TYPE_4BYTE_ABGR)))
 
+#+clj
 (defn draw-backing-image
   "Draw a BufferedImage to a Frame"
   [^Frame frame ^BufferedImage img]
   (.drawImage (.getGraphics frame) img 0 0 nil))
 
+#+clj
 (defn frame-draw-square
   "Draw a square in one of 5 positions at a fixed size"
   [frame direction]
@@ -135,11 +162,15 @@
   (let [row (fn [] (vec (take cols (repeatedly #(rand-int 2)))))]
     (vec (take rows (repeatedly row)))))
 
+(defn grid-string
+  [grid]
+  (clojure.string/join "\n" (map #(apply str %) grid)))
+
 (defn print-grid
   "Print a grid as one row per line with no spaces"
   [grid]
-  (doseq [row grid]
-    (println (apply str row)))
+  #+clj (println (grid-string grid))
+  #+cljs (.log js/console (grid-string grid))
   grid)
 
 (defn all-coords
@@ -153,6 +184,7 @@
      (for [y (range rows) x (range cols)]
        (vector x y))))
 
+#+clj
 (defn frame-draw-grid
   "Draw a grid stretched to fit a java.awt.Frame"
   [frame grid]
@@ -175,6 +207,11 @@
           (.fillRect g x y col-width row-height))))
     (draw-backing-image frame img))
   grid)
+
+#+cljs
+(defn frame-draw-grid
+  [frame grid]
+  (dom/setTextContent frame (grid-string grid)))
 
 (defn empty-row
   [length]
@@ -290,7 +327,7 @@
 (defn tick-chan
   [ms]
   (let [tickc (async/chan)]
-    (async/go
+    (go
      (loop []
        (async/<! (async/timeout ms))
        (async/>! tickc :tick)
@@ -305,7 +342,7 @@
         closec (setup-close-listener frame)
         quitc (async/chan)]
 
-    (async/go (loop [game (new-game)]
+    (go (loop [game (new-game)]
                 (let [[val port] (async/alts! [keys ticker])
                       key (if (= port keys) val [:down :press])]
                   (when (= (key 1) :press)
@@ -317,7 +354,7 @@
                       (recur game)))))
               (async/>! closec :quit))
 
-    (async/go
+    (go
      (let [cancelled (async/chan)]
        (async/<! closec)
        (.hide frame)
@@ -329,6 +366,11 @@
   [& args]
   (async/<!! (play))
   (System/exit 0))
+
+#+cljs
+(defn ^:export main
+  []
+  (play))
 
 (comment
   (demo-events)
