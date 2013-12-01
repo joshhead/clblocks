@@ -57,14 +57,11 @@
 
 #+clj
 (defn setup-key-listener
-  "Returns a vector of two channels. The first will get return vectors of
-  [direction action] where direction is in #{:up :down :left :right :escape} and
-  action is in #{:press :release}. To remove key listeners, put a channel
-  on the second channel. When it is done cleaning up, it will close the
-  channel it received."
+  "Returns a channel onto which will be put vectors of [direction action]
+  where direction is in #{:up :down :left :right :escape} and
+  action is in #{:press :release}."
   [^Frame frame]
   (let [event-chan (async/chan)
-        cancel-chan (async/chan)
         key-listener (reify
                        java.awt.event.KeyListener
                        (keyPressed [_ e]
@@ -77,20 +74,12 @@
                          nil))]
     (.addKeyListener frame key-listener)
 
-    (go
-     (let [cancelled-chan (async/<! cancel-chan)]
-       (.removeKeyListener frame key-listener)
-       (async/close! event-chan)
-       (async/close! cancel-chan)
-       (async/close! cancelled-chan)))
-
-    [event-chan cancel-chan]))
+    event-chan))
 
 #+cljs
 (defn setup-key-listener
   [frame]
-  (let [event-chan (async/chan)
-        cancel-chan (async/chan)]
+  (let [event-chan (async/chan)]
 
     (goog.events.listen
      js/document
@@ -106,7 +95,7 @@
        (when-let [event-kw (get-event-keyword e)]
          (async/put! event-chan [event-kw :release]))))
 
-    [event-chan cancel-chan]))
+    event-chan))
 
 #+clj
 (defn setup-close-listener
@@ -124,25 +113,6 @@
   [frame]
   (async/chan))
 
-(defn demo-events
-  "Create a frame and listen for events, printing them to stdout"
-  []
-  (let [frame (new-frame)
-        [keys cancel-keys] (setup-key-listener frame)
-        closec (setup-close-listener frame)]
-    (go (loop []
-                (let [key (async/<! keys)]
-                  (println key)
-                  (when-not (nil? key)
-                    (recur)))))
-    (go
-     (let [cancelled (async/chan)]
-       (async/<! closec)
-       (async/>! cancel-keys cancelled)
-       (async/<! cancelled)
-       (.hide frame)))
-    frame))
-
 #+clj
 (defn backing-image
   "Given a frame create a new BufferedImage.
@@ -158,29 +128,6 @@
   "Draw a BufferedImage to a Frame"
   [^Frame frame ^BufferedImage img]
   (.drawImage (.getGraphics frame) img 0 0 nil))
-
-#+clj
-(defn frame-draw-square
-  "Draw a square in one of 5 positions at a fixed size"
-  [frame direction]
-  (let [img (backing-image frame)
-        g (.createGraphics img)
-        width  (.getWidth frame)
-        height (.getHeight frame)
-        [x y]  (case direction
-                 :up [50 0]
-                 :down [50 100]
-                 :left [0 50]
-                 :right [100 50]
-                 :center [50 50]
-                 [50 50])]
-    (doto g
-      (.setColor (Color. 200 200 200))
-      (.fillRect 0 0 width height)
-      (.setColor (Color. 0 100 0))
-      (.fillRect x y 50 50))
-
-    (draw-backing-image frame img)))
 
 (defn make-grid
   "of: what to make a grid of e.g. 10x10 grid of 0's (make-grid 0 10 10)"
@@ -371,7 +318,7 @@
 (defn play
   []
   (let [frame (new-frame 200 440)
-        [keys cancel-keys] (setup-key-listener frame)
+        keys (setup-key-listener frame)
         ticker (tick-chan 500)
         closec (setup-close-listener frame)
         quitc (async/chan)]
