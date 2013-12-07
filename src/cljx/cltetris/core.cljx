@@ -1,133 +1,13 @@
 (ns cltetris.core
   (:require [cltetris.tetrominos :as tetrominos]
+            [cltetris.ui :as ui]
             [clojure.string :as clojure.string]
             #+clj [clojure.core.async :as async :refer [go]]
-            #+cljs [cljs.core.async :as async]
-            #+cljs [goog.dom :as dom]
-            #+cljs [goog.events :as events]
-            #+cljs [goog.events.KeyCodes])
-  #+cljs (:require-macros [cljs.core.async.macros :refer [go]])
-  #+clj (:import [java.awt Frame Graphics Color]
-                 [java.awt.event KeyListener KeyEvent WindowAdapter]
-                 [java.awt.image BufferedImage]))
-
-#+clj
-(def keycodes {"Up" :up
-               "Down" :down
-               "Left" :left
-               "Right" :right
-               "Escape" :escape})
-
-#+cljs
-(def keycodes {goog.events.KeyCodes.UP :up
-               goog.events.KeyCodes.DOWN :down
-               goog.events.KeyCodes.LEFT :left
-               goog.events.KeyCodes.RIGHT :right
-               goog.events.KeyCodes.ESC :escape})
+            #+cljs [cljs.core.async :as async])
+  #+cljs (:require-macros [cljs.core.async.macros :refer [go]]))
 
 (def field-width 10)
 (def field-height 22)
-
-#+clj
-(defn new-frame
-  ([]
-     (new-frame 200 440))
-  ([width height]
-     (let [frame (Frame.)]
-       (doto frame
-         (.setSize width height)
-         (.show)))))
-
-#+cljs
-(defn new-frame
-  ([]
-     (new-frame 200 440))
-  ([width height]
-     (dom/getElement "cltetris")))
-
-#+clj
-(defn get-event-keyword
-  [e]
-  (get keycodes (KeyEvent/getKeyText (.getKeyCode e)) nil))
-
-#+cljs
-(defn get-event-keyword
-  [e]
-  (get keycodes (.-keyCode e) nil))
-
-#+clj
-(defn setup-key-listener
-  "Returns a channel onto which will be put vectors of [direction action]
-  where direction is in #{:up :down :left :right :escape} and
-  action is in #{:press :release}."
-  [^Frame frame]
-  (let [event-chan (async/chan)
-        key-listener (reify
-                       java.awt.event.KeyListener
-                       (keyPressed [_ e]
-                         (when-let [event-kw (get-event-keyword e)]
-                           (async/put! event-chan [event-kw :press])))
-                       (keyReleased [_ e]
-                         (when-let [event-kw (get-event-keyword e)]
-                           (async/put! event-chan [event-kw :release])))
-                       (keyTyped [this e]
-                         nil))]
-    (.addKeyListener frame key-listener)
-
-    event-chan))
-
-#+cljs
-(defn setup-key-listener
-  [frame]
-  (let [event-chan (async/chan)]
-
-    (goog.events.listen
-     js/document
-     goog.events.EventType.KEYDOWN
-     (fn [e]
-       (when-let [event-kw (get-event-keyword e)]
-         (async/put! event-chan [event-kw :press]))))
-
-    (goog.events.listen
-     js/document
-     goog.events.EventType.KEYUP
-     (fn [e]
-       (when-let [event-kw (get-event-keyword e)]
-         (async/put! event-chan [event-kw :release]))))
-
-    event-chan))
-
-#+clj
-(defn setup-close-listener
-  "Returns a channel that will have :close put on it when
-   the close button of a frame is clicked."
-  [^Frame frame]
-  (let [c (async/chan)]
-    (.addWindowListener frame (proxy [WindowAdapter] []
-                                (windowClosing [event]
-                                  (async/put! c :close))))
-    c))
-
-#+cljs
-(defn setup-close-listener
-  [frame]
-  (async/chan))
-
-#+clj
-(defn backing-image
-  "Given a frame create a new BufferedImage.
-  Get a Graphics with (.createGraphics img) and draw to that.
-  When finished, write draw the backing image to the frame."
-  [^Frame frame]
-  (let [width (.getWidth frame)
-        height (.getHeight frame)]
-    (BufferedImage. width height BufferedImage/TYPE_4BYTE_ABGR)))
-
-#+clj
-(defn draw-backing-image
-  "Draw a BufferedImage to a Frame"
-  [^Frame frame ^BufferedImage img]
-  (.drawImage (.getGraphics frame) img 0 0 nil))
 
 (defn make-grid
   "of: what to make a grid of e.g. 10x10 grid of 0's (make-grid 0 10 10)"
@@ -151,48 +31,6 @@
   #+clj (println (grid-string grid))
   #+cljs (.log js/console (grid-string grid))
   grid)
-
-(defn all-coords
-  "For a given width and height, or a grid of a given width and height,
-  return a list of vectors [row col] for every coordinate on the grid."
-  ([grid]
-     (let [rows (count grid)
-           cols (count (first grid))]
-       (all-coords cols rows)))
-  ([rows cols]
-     (for [y (range rows) x (range cols)]
-       (vector x y))))
-
-#+clj
-(defn frame-draw-grid
-  "Draw a grid stretched to fit a java.awt.Frame"
-  [frame grid]
-  (let [img (backing-image frame)
-        g (.createGraphics img)
-        width  (.getWidth frame)
-        height (.getHeight frame)
-        rows (count grid)
-        cols (count (first grid))
-        row-height (/ height rows)
-        col-width (/ width cols)]
-    (.setColor g (Color. 200 200 200))
-    (.fillRect g 0 0 width height)
-    (doseq [[row col :as coord] (all-coords grid)]
-      (let [x (* col-width  col)
-            y (* row-height row)
-            cell-val (get-in grid coord)]
-        (.setColor g (Color. 0 80 0))
-        (when (> cell-val 0)
-          (.fillRect g x y col-width row-height))))
-    (draw-backing-image frame img))
-  grid)
-
-#+cljs
-(defn frame-draw-grid
-  [frame grid]
-  (let [el-grid (mapv (fn [row] (mapv #(if (< 0 %) "<div class='cltetris__cell--full'></div>" "<div class='cltetris__cell--empty'></div>") row)) grid)
-        grid-html (apply str (map #(str "<div class='row'>" % "</div>") (map #(apply str %) el-grid)))]
-    (set! (.-innerHTML frame) grid-html)))
 
 (defn empty-row
   [length]
@@ -317,10 +155,10 @@
 
 (defn play
   []
-  (let [frame (new-frame 200 440)
-        keysc (setup-key-listener frame)
+  (let [frame (ui/new-frame 200 440)
+        keysc (ui/setup-key-listener frame)
         ticker (tick-chan 500)
-        closec (setup-close-listener frame)
+        closec (ui/setup-close-listener frame)
         quitc (async/chan)]
 
     (go (loop [game (new-game)]
@@ -328,7 +166,7 @@
                       key (if (= port keysc) val [:down :press])]
                   (when (= (key 1) :press)
                     (let [next-game (step-game game (key 0))]
-                      (frame-draw-grid frame (merge-grid (:grid next-game) (:piece next-game) (:position next-game)))))
+                      (ui/frame-draw-grid frame (merge-grid (:grid next-game) (:piece next-game) (:position next-game)))))
                   (when-not (or (nil? key) (= (key 0) :escape))
                     (if (= (key 1) :press)
                       (recur (step-game game (key 0)))
@@ -343,6 +181,7 @@
 
     quitc))
 
+#+clj
 (defn -main
   [& args]
   (async/<!! (play))
@@ -354,7 +193,6 @@
   (play))
 
 (comment
-  (demo-events)
   (play)
 )
 
