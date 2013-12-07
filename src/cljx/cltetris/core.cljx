@@ -115,7 +115,10 @@
 
 (defn move-clockwise
   [game]
-  (update-in game [:piece] tetrominos/rotate))
+  (let [moved (update-in game [:piece] tetrominos/rotate)]
+    (if (overlapping? moved)
+      game
+      moved)))
 
 (defn move-right
   [game]
