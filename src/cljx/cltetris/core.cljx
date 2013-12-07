@@ -318,14 +318,14 @@
 (defn play
   []
   (let [frame (new-frame 200 440)
-        keys (setup-key-listener frame)
+        keysc (setup-key-listener frame)
         ticker (tick-chan 500)
         closec (setup-close-listener frame)
         quitc (async/chan)]
 
     (go (loop [game (new-game)]
-                (let [[val port] (async/alts! [keys ticker])
-                      key (if (= port keys) val [:down :press])]
+                (let [[val port] (async/alts! [keysc ticker])
+                      key (if (= port keysc) val [:down :press])]
                   (when (= (key 1) :press)
                     (let [next-game (step-game game (key 0))]
                       (frame-draw-grid frame (merge-grid (:grid next-game) (:piece next-game) (:position next-game)))))
