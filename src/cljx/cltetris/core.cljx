@@ -67,6 +67,13 @@
   (let [grid (merge-grid (:grid game) (:piece game) (:position game))]
     (some (partial < 1) (apply concat grid))))
 
+(defn horizontal-out-of-bounds?
+  "True if :position puts all or part of :piece outside of :grid"
+  [{:keys [grid piece position] :as game}]
+  (let [flat-piece (apply map + piece)
+        x-offset (count (take-while zero? flat-piece))
+        inner-width 3]))
+
 (defn lock-piece
   [{:keys [grid piece position] :as game}]
   (assoc game :grid (merge-grid grid piece position)))
@@ -107,11 +114,6 @@
    :position [0 0]
    :piece (tetrominos/random)
    :next (tetrominos/random)})
-
-(defn out-of-bounds?
-  "True if :position puts all or part of :piece outside of :grid"
-  [game]
-  false)
 
 (defn move-clockwise
   [game]
