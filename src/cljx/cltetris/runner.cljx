@@ -1,9 +1,9 @@
 (ns cltetris.runner
   (:require [cltetris.game :as cltetris]
             [cltetris.platform :as platform]
-            #+clj [clojure.core.async :as async :refer [go]]
+            #+clj [clojure.core.async :as async :refer [go go-loop]]
             #+cljs [cljs.core.async :as async])
-  #+cljs (:require-macros [cljs.core.async.macros :refer [go]]))
+  #+cljs (:require-macros [cljs.core.async.macros :refer [go go-loop]]))
 
 (defn tick-chan
   [ms]
@@ -18,22 +18,20 @@
 (defn play
   []
   (let [frame (platform/new-frame 200 440)
-        keysc (platform/setup-key-listener frame)
+        ; Deal only with key presses
+        keysc (async/map< first (async/filter< #(= (second %) :press) (platform/setup-key-listener frame)))
         ticker (tick-chan 500)
         closec (platform/setup-close-listener frame)
         quitc (async/chan)]
 
-    (go (loop [game (cltetris/new-game)]
-                (let [[val port] (async/alts! [keysc ticker])
-                      key (if (= port keysc) val [:down :press])]
-                  (when (= (key 1) :press)
-                    (let [next-game (cltetris/step-game game (key 0))]
-                      (platform/frame-draw-game frame next-game)))
-                  (when-not (or (nil? key) (= (key 0) :escape))
-                    (if (= (key 1) :press)
-                      (recur (cltetris/step-game game (key 0)))
-                      (recur game)))))
-              (async/>! closec :quit))
+    (go-loop [game (cltetris/new-game)]
+        (let [[val port] (async/alts! [keysc ticker])
+              key (if (= port keysc) val :down)
+              next-game (cltetris/step-game game key)]
+          (platform/frame-draw-game frame next-game)
+          (when-not (or (nil? key) (= key :escape))
+            (recur next-game)))
+        (async/>! closec :quit))
 
     ; Close window if using java.awt
     #+clj
