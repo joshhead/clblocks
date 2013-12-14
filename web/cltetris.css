@@ -10,14 +10,16 @@
 
 [class*=cltetris__cell] {
   display: inline-block;
-  width: 1em;
-  height: 1em;
+  width: 0.8em;
+  height: 0.8em;
 }
 
 .cltetris__cell--full {
     background-color: #008000;
+    border: 0.2em outset #00C000;
 }
 
 .cltetris__cell--empty {
     background-color: #C8C8C8;
+    border: 0.2em solid #C8C8C8;
 }
