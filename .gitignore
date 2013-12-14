@@ -3,6 +3,7 @@
 /classes
 /checkouts
 /web/cltetris.js
+/web/out
 pom.xml
 *.jar
 *.class

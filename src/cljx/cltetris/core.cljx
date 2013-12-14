@@ -72,7 +72,7 @@
   [{:keys [grid piece position] :as game}]
   (let [flat-piece (apply map + piece)
         x-offset (count (take-while zero? flat-piece))
-        inner-width 3]))
+        inner-width (count (filter (complement zero?) flat-piece))]))
 
 (defn lock-piece
   [{:keys [grid piece position] :as game}]
@@ -124,11 +124,17 @@
 
 (defn move-right
   [game]
-  (update-in game [:position 1] inc))
+  (let [moved (update-in game [:position 1] inc)]
+    (if (overlapping? moved)
+      game
+      moved)))
 
 (defn move-left
   [game]
-  (update-in game [:position 1] dec))
+  (let [moved (update-in game [:position 1] dec)]
+    (if (overlapping? moved)
+      game
+      moved)))
 
 (defn move-down
   [game]
@@ -178,11 +184,12 @@
                       (recur game)))))
               (async/>! closec :quit))
 
+    ; Close window if using java.awt
+    #+clj
     (go
-     (let [cancelled (async/chan)]
-       (async/<! closec)
-       (.hide frame)
-       (async/close! quitc)))
+     (async/<! closec)
+     (.hide frame)
+     (async/close! quitc))
 
     quitc))
 

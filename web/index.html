@@ -5,7 +5,9 @@
   </head>
   <body>
     <div id="cltetris" class="cltetris"></div>
-    <script src="cltetris.js" type="text/javascript"></script>
-    <script>cltetris.core.main()</script>
+    <script src="out/goog/base.js"></script>
+    <script src="cltetris.js"></script>
+    <script>goog.require('cltetris.core');</script>
+    <script>cltetris.core.main();</script>
   </body>
 </html>
