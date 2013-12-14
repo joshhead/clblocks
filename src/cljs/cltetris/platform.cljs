@@ -1,4 +1,4 @@
-(ns cltetris.ui
+(ns cltetris.platform
   (:require [cltetris.tetrominos :as tetrominos]
             [clojure.string :as clojure.string]
             [cljs.core.async :as async]

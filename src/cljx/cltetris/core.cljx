@@ -1,5 +1,5 @@
 (ns cltetris.core
-  (:require [cltetris.ui :as ui]
+  (:require [cltetris.platform :as platform]
             [clojure.string :as clojure.string]
             #+clj [clojure.core.async :as async :refer [go]]
             #+cljs [cljs.core.async :as async])
@@ -252,10 +252,10 @@
 
 (defn play
   []
-  (let [frame (ui/new-frame 200 440)
-        keysc (ui/setup-key-listener frame)
+  (let [frame (platform/new-frame 200 440)
+        keysc (platform/setup-key-listener frame)
         ticker (tick-chan 500)
-        closec (ui/setup-close-listener frame)
+        closec (platform/setup-close-listener frame)
         quitc (async/chan)]
 
     (go (loop [game (new-game)]
@@ -263,7 +263,7 @@
                       key (if (= port keysc) val [:down :press])]
                   (when (= (key 1) :press)
                     (let [next-game (step-game game (key 0))]
-                      (ui/frame-draw-grid frame (merge-grid (:grid next-game) (:piece next-game) (:position next-game)))))
+                      (platform/frame-draw-grid frame (merge-grid (:grid next-game) (:piece next-game) (:position next-game)))))
                   (when-not (or (nil? key) (= (key 0) :escape))
                     (if (= (key 1) :press)
                       (recur (step-game game (key 0)))

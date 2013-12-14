@@ -1,4 +1,4 @@
-(ns cltetris.ui
+(ns cltetris.platform
   (:require [cltetris.tetrominos :as tetrominos]
             [clojure.string :as clojure.string]
             [clojure.core.async :as async :refer [go]])
