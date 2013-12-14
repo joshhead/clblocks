@@ -29,4 +29,9 @@
                         :compiler {:output-to "web/cltetris.js"
                                    :output-dir "web/out"
                                    :optimizations :none
-                                   :source-map true}}]})
+                                   :source-map true}}
+                       {:id "prod"
+                        :source-paths ["src/cljs" "target/generated/cljs"]
+                        :compiler {:output-to "web/cltetris.js"
+                                   :optimizations :advanced
+                                   :pretty-print false}}]})
