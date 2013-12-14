@@ -1,5 +1,5 @@
 (ns cltetris.platform
-  (:require [cltetris.tetrominos :as tetrominos]
+  (:require [cltetris.game :as cltetris]
             [clojure.string :as clojure.string]
             [clojure.core.async :as async :refer [go]])
   (:import [java.awt Frame Graphics Color]
@@ -81,26 +81,27 @@
      (for [y (range rows) x (range cols)]
        (vector x y))))
 
-(defn frame-draw-grid
+(defn frame-draw-game
   "Draw a grid stretched to fit a java.awt.Frame"
-  [frame grid]
-  (let [img (backing-image frame)
+  [frame {:keys [grid piece position] :as  game}]
+  (let [merged-grid (cltetris/merge-grid grid piece position)
+        img (backing-image frame)
         g (.createGraphics img)
         width  (.getWidth frame)
         height (.getHeight frame)
-        rows (count grid)
-        cols (count (first grid))
+        rows (count merged-grid)
+        cols (count (first merged-grid))
         row-height (/ height rows)
         col-width (/ width cols)]
     (.setColor g (Color. 200 200 200))
     (.fillRect g 0 0 width height)
-    (doseq [[row col :as coord] (all-coords grid)]
+    (doseq [[row col :as coord] (all-coords merged-grid)]
       (let [x (* col-width  col)
             y (* row-height row)
-            cell-val (get-in grid coord)]
+            cell-val (get-in merged-grid coord)]
         (.setColor g (Color. 0 80 0))
         (when (> cell-val 0)
           (.fillRect g x y col-width row-height))))
     (draw-backing-image frame img))
-  grid)
+  game)
 

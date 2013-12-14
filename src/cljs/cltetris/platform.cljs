@@ -1,5 +1,5 @@
 (ns cltetris.platform
-  (:require [cltetris.tetrominos :as tetrominos]
+  (:require [cltetris.game :as cltetris]
             [clojure.string :as clojure.string]
             [cljs.core.async :as async]
             [goog.dom :as dom]
@@ -44,10 +44,24 @@
 
     event-chan))
 
-(defn frame-draw-grid
-  [frame grid]
-  (let [el-grid (mapv (fn [row] (mapv #(if (< 0 %) "<div class='cltetris__cell--full'></div>" "<div class='cltetris__cell--empty'></div>") row)) grid)
-        grid-html (apply str (map #(str "<div class='row'>" % "</div>") (map #(apply str %) el-grid)))]
+(defn ^:private cell-markup
+  [cell]
+  (if (< 0 cell)
+    "<div class='cltetris__cell--full'></div>"
+    "<div class='cltetris__cell--empty'></div>"))
+
+(defn ^:private row-markup
+  [row]
+  (apply str (concat ["<div class='row'>"] (map cell-markup row) ["</div>"])))
+
+(defn ^:private grid-markup
+  [grid]
+  (apply str (concat (map row-markup grid))))
+
+(defn frame-draw-game
+  [frame {:keys [grid piece position] :as game}]
+  (let [drawable-grid (cltetris/merge-grid grid piece position)
+        grid-html (grid-markup drawable-grid)]
     (set! (.-innerHTML frame) grid-html)))
 
 (defn setup-close-listener

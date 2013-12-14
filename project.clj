@@ -1,5 +1,5 @@
 (defproject cltetris "0.1.0-SNAPSHOT"
-  :main cltetris.core
+  :main cltetris.runner
   :description "Tetris clone in clojure, clojurescript"
   :url "http://example.com/FIXME"
   :license {:name "Eclipse Public License"

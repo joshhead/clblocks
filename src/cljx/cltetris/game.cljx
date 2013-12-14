@@ -1,9 +1,5 @@
-(ns cltetris.core
-  (:require [cltetris.platform :as platform]
-            [clojure.string :as clojure.string]
-            #+clj [clojure.core.async :as async :refer [go]]
-            #+cljs [cljs.core.async :as async])
-  #+cljs (:require-macros [cljs.core.async.macros :refer [go]]))
+(ns cltetris.game
+  (:require [clojure.string]))
 
 (def i-tetromino
   [[0 1 0]
@@ -176,7 +172,8 @@
   {:grid (n-rows-dirty-grid 3)
    :position start-position
    :piece (random-tetromino)
-   :next (random-tetromino)})
+   :next (random-tetromino)
+   :lines 0})
 
 (defn hit?
   "Current game has a piece that overlaps a block or is
@@ -239,58 +236,3 @@
     :down (move-down game)
     :drop (move-drop game)
     game))
-
-(defn tick-chan
-  [ms]
-  (let [tickc (async/chan)]
-    (go
-     (loop []
-       (async/<! (async/timeout ms))
-       (async/>! tickc :tick)
-       (recur)))
-    tickc))
-
-(defn play
-  []
-  (let [frame (platform/new-frame 200 440)
-        keysc (platform/setup-key-listener frame)
-        ticker (tick-chan 500)
-        closec (platform/setup-close-listener frame)
-        quitc (async/chan)]
-
-    (go (loop [game (new-game)]
-                (let [[val port] (async/alts! [keysc ticker])
-                      key (if (= port keysc) val [:down :press])]
-                  (when (= (key 1) :press)
-                    (let [next-game (step-game game (key 0))]
-                      (platform/frame-draw-grid frame (merge-grid (:grid next-game) (:piece next-game) (:position next-game)))))
-                  (when-not (or (nil? key) (= (key 0) :escape))
-                    (if (= (key 1) :press)
-                      (recur (step-game game (key 0)))
-                      (recur game)))))
-              (async/>! closec :quit))
-
-    ; Close window if using java.awt
-    #+clj
-    (go
-     (async/<! closec)
-     (.hide frame)
-     (async/close! quitc))
-
-    quitc))
-
-#+clj
-(defn -main
-  [& args]
-  (async/<!! (play))
-  (System/exit 0))
-
-#+cljs
-(defn ^:export main
-  []
-  (play))
-
-(comment
-  (play)
-)
-
