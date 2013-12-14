@@ -1,8 +1,11 @@
 .cltetris {
     font-size: 22px;
+    position: relative;
+    width: 17em;
+    padding: 0.5em;
 }
 
-.cltetris * {
+.cltetris__grid * {
     margin: 0;
     padding: 0;
     line-height: 0;
@@ -22,4 +25,19 @@
 .cltetris__cell--empty {
     background-color: #C8C8C8;
     border: 0.2em solid #C8C8C8;
+}
+
+.cltetris__status {
+    position: absolute;
+    top: 0.5em;
+    left: 12.5em;
+}
+
+.cltetris__status__next {
+    height: 6em;
+}
+
+.cltetris__status__next .cltetris__cell--empty {
+    background-color: rgba(0, 0, 0, 0);
+    border: 0.2em solid rgba(0, 0, 0, 0);
 }

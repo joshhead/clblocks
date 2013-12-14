@@ -141,11 +141,20 @@
   [row]
   (every? (partial < 0) row))
 
+(defn count-full-rows
+  "Returns number of full rows on grid"
+  [grid]
+  (count (filter row-full? grid)))
+
+(defn game-score-rows
+  [game]
+  (update-in game [:lines] (partial + (count-full-rows (:grid game)))))
+
 (defn clear-rows
   "Remove full rows from the field"
   [grid]
   (let [cols (count (first grid))
-        n-full-rows (count (filter row-full? grid))
+        n-full-rows (count-full-rows grid)
         new-rows (take n-full-rows (repeatedly #(empty-row cols)))
         cleared-grid (filterv (complement row-full?) grid)]
     (vec (concat new-rows cleared-grid))))
@@ -212,7 +221,11 @@
   (let [moved (update-in game [:position 0] inc)]
     (if (or (overlapping? moved)
             (vertical-out-of-bounds? moved))
-      (-> game lock-piece game-clear-rows activate-next)
+      (-> game
+          lock-piece
+          game-score-rows
+          game-clear-rows
+          activate-next)
       moved)))
 
 (defn move-drop

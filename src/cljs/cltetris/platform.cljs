@@ -56,13 +56,29 @@
 
 (defn ^:private grid-markup
   [grid]
-  (apply str (concat (map row-markup grid))))
+  (apply str (concat ["<div class='cltetris__grid'>"] (map row-markup grid) ["</div>"])))
+
+(defn ^:private score-markup
+  [{:keys [lines]}]
+  (str "<div class='cltetris__status__score'>Lines: " lines "</div>"))
+
+(defn ^:private next-markup
+  [{:keys [next]}]
+  (str "<div class='cltetris__status__next'>Next:" (grid-markup next) "</div>"))
+
+(defn ^:private status-markup
+  [game]
+  (str "<div class='cltetris__status'>" (next-markup game) (score-markup game) "</div>"))
+
+(defn ^:private game-markup
+  [{:keys [grid piece position] :as game}]
+  (let [drawable-grid (cltetris/merge-grid grid piece position)]
+    (str "<div class='cltetris__field'>" (grid-markup drawable-grid) "</div>"
+         (status-markup game))))
 
 (defn frame-draw-game
-  [frame {:keys [grid piece position] :as game}]
-  (let [drawable-grid (cltetris/merge-grid grid piece position)
-        grid-html (grid-markup drawable-grid)]
-    (set! (.-innerHTML frame) grid-html)))
+  [frame game]
+  (set! (.-innerHTML frame) (game-markup game)))
 
 (defn setup-close-listener
   [frame]
