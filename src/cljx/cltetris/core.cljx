@@ -1,10 +1,59 @@
 (ns cltetris.core
-  (:require [cltetris.tetrominos :as tetrominos]
-            [cltetris.ui :as ui]
+  (:require [cltetris.ui :as ui]
             [clojure.string :as clojure.string]
             #+clj [clojure.core.async :as async :refer [go]]
             #+cljs [cljs.core.async :as async])
   #+cljs (:require-macros [cljs.core.async.macros :refer [go]]))
+
+(def i-tetromino
+  [[0 1 0]
+   [0 1 0]
+   [0 1 0]
+   [0 1 0]])
+
+(def j-tetromino
+  [[1 1 1]
+   [0 0 1]])
+
+(def l-tetromino
+  [[1 1 1]
+   [1 0 0]])
+
+(def o-tetromino
+  [[1 1]
+   [1 1]])
+
+(def s-tetromino
+  [[0 1 1]
+   [1 1 0]])
+
+(def t-tetromino
+  [[0 1 0]
+   [1 1 1]
+   [0 0 0]])
+
+(def z-tetromino
+  [[1 1 0]
+   [0 1 1]])
+
+
+(defn rotate-grid
+  "Rotate 2d grid, intended for tetrominos"
+  [grid]
+  (vec (apply map vector (reverse grid))))
+
+(def all-tetrominos
+  [i-tetromino
+   j-tetromino
+   l-tetromino
+   o-tetromino
+   s-tetromino
+   t-tetromino
+   z-tetromino])
+
+(defn random-tetromino
+  []
+  (nth all-tetrominos (rand-int (count all-tetrominos))))
 
 (def field-width 10)
 (def field-height 22)
@@ -99,7 +148,7 @@
   [{:keys [piece next] :as game}]
   (-> game
       (assoc :piece next)
-      (assoc :next (tetrominos/random))
+      (assoc :next (random-tetromino))
       (assoc :position [0 0])))
 
 (defn n-rows-dirty-grid
@@ -112,12 +161,12 @@
   []
   {:grid (n-rows-dirty-grid 3)
    :position [0 0]
-   :piece (tetrominos/random)
-   :next (tetrominos/random)})
+   :piece (random-tetromino)
+   :next (random-tetromino)})
 
 (defn move-clockwise
   [game]
-  (let [moved (update-in game [:piece] tetrominos/rotate)]
+  (let [moved (update-in game [:piece] rotate-grid)]
     (if (overlapping? moved)
       game
       moved)))
