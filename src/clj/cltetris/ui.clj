@@ -10,6 +10,7 @@
                "Down" :down
                "Left" :left
                "Right" :right
+               "Space" :drop
                "Escape" :escape})
 
 (defn new-frame

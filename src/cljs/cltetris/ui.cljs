@@ -11,6 +11,7 @@
                goog.events.KeyCodes.DOWN :down
                goog.events.KeyCodes.LEFT :left
                goog.events.KeyCodes.RIGHT :right
+               goog.events.KeyCodes.SPACE :drop
                goog.events.KeyCodes.ESC :escape})
 
 (defn new-frame

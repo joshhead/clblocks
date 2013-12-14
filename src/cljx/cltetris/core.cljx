@@ -177,6 +177,14 @@
    :piece (random-tetromino)
    :next (random-tetromino)})
 
+(defn hit?
+  "Current game has a piece that overlaps a block or is
+  outside of the boundaries of the grid"
+  [game]
+  (or (overlapping? game)
+      (horizontal-out-of-bounds? game)
+      (vertical-out-of-bounds? game)))
+
 (defn move-clockwise
   [game]
   (let [moved (update-in game [:piece] rotate-grid)]
@@ -209,6 +217,16 @@
       (-> game lock-piece game-clear-rows activate-next)
       moved)))
 
+(defn move-drop
+  [game]
+  (let [max-tries (count (:grid game))
+        down #(update-in % [:position 0] inc)
+        moves (take max-tries (iterate down game))
+        move-pairs (map vector moves (drop 1 moves))]
+    (if-let [move (some #(when (hit? (second %)) %) move-pairs)]
+      (move-down (first move))
+      game)))
+
 (defn step-game
   "Advance game one frame"
   [game input]
@@ -218,6 +236,7 @@
     :left (move-left game)
     :right (move-right game)
     :down (move-down game)
+    :drop (move-drop game)
     game))
 
 (defn tick-chan
