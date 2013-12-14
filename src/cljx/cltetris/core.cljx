@@ -56,6 +56,7 @@
 
 (def field-width 10)
 (def field-height 22)
+(def start-position [0 3])
 
 (defn make-grid
   "of: what to make a grid of e.g. 10x10 grid of 0's (make-grid 0 10 10)"
@@ -162,7 +163,7 @@
   (-> game
       (assoc :piece next)
       (assoc :next (random-tetromino))
-      (assoc :position [0 0])))
+      (assoc :position start-position)))
 
 (defn n-rows-dirty-grid
   [n]
@@ -173,7 +174,7 @@
 (defn new-game
   []
   {:grid (n-rows-dirty-grid 3)
-   :position [0 0]
+   :position start-position
    :piece (random-tetromino)
    :next (random-tetromino)})
 
