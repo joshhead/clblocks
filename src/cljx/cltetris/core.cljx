@@ -36,7 +36,6 @@
   [[1 1 0]
    [0 1 1]])
 
-
 (defn rotate-grid
   "Rotate 2d grid, intended for tetrominos"
   [grid]
@@ -127,6 +126,16 @@
     (or (< grid-width (+ offset-position inner-width))
         (< offset-position 0))))
 
+(defn vertical-out-of-bounds?
+  "True of :position puts all or part of :piece beyond bottom of :grid"
+  [{:keys [grid piece position] :as game}]
+  (let [grid-height (count grid)
+        flat-piece (map (partial apply +) piece)
+        y-offset (count (take-while zero? flat-piece))
+        inner-height (count (filter (complement zero?) flat-piece))
+        offset-position (+ (first position) y-offset)]
+    (< grid-height (+ offset-position inner-height))))
+
 (defn lock-piece
   [{:keys [grid piece position] :as game}]
   (assoc game :grid (merge-grid grid piece position)))
@@ -195,7 +204,8 @@
 (defn move-down
   [game]
   (let [moved (update-in game [:position 0] inc)]
-    (if (overlapping? moved)
+    (if (or (overlapping? moved)
+            (vertical-out-of-bounds? moved))
       (-> game lock-piece game-clear-rows activate-next)
       moved)))
 
