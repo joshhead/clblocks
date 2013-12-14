@@ -119,9 +119,13 @@
 (defn horizontal-out-of-bounds?
   "True if :position puts all or part of :piece outside of :grid"
   [{:keys [grid piece position] :as game}]
-  (let [flat-piece (apply map + piece)
+  (let [grid-width (count (first grid))
+        flat-piece (apply map + piece)
         x-offset (count (take-while zero? flat-piece))
-        inner-width (count (filter (complement zero?) flat-piece))]))
+        inner-width (count (filter (complement zero?) flat-piece))
+        offset-position (+ (second position) x-offset)]
+    (or (< grid-width (+ offset-position inner-width))
+        (< offset-position 0))))
 
 (defn lock-piece
   [{:keys [grid piece position] :as game}]
@@ -167,21 +171,24 @@
 (defn move-clockwise
   [game]
   (let [moved (update-in game [:piece] rotate-grid)]
-    (if (overlapping? moved)
+    (if (or (overlapping? moved)
+            (horizontal-out-of-bounds? moved))
       game
       moved)))
 
 (defn move-right
   [game]
   (let [moved (update-in game [:position 1] inc)]
-    (if (overlapping? moved)
+    (if (or (overlapping? moved)
+            (horizontal-out-of-bounds? moved))
       game
       moved)))
 
 (defn move-left
   [game]
   (let [moved (update-in game [:position 1] dec)]
-    (if (overlapping? moved)
+    (if (or (overlapping? moved)
+            (horizontal-out-of-bounds? moved))
       game
       moved)))
 
