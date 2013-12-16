@@ -3,6 +3,7 @@
     position: relative;
     width: 17em;
     padding: 0.5em;
+    display: inline-block;
 }
 
 .cltetris__grid * {
