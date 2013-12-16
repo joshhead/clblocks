@@ -22,9 +22,12 @@
         keysc (async/map< first (async/filter< #(= (second %) :press) (platform/setup-key-listener frame)))
         ticker (tick-chan 500)
         closec (platform/setup-close-listener frame)
-        quitc (async/chan)]
+        quitc (async/chan)
+        initial-game (cltetris/new-game)]
 
-    (go-loop [game (cltetris/new-game)]
+    (platform/frame-draw-game frame initial-game)
+
+    (go-loop [game initial-game]
         (let [[val port] (async/alts! [keysc ticker])
               key (if (= port keysc) val :down)
               next-game (cltetris/step-game game key)]
