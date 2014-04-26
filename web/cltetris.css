@@ -1,9 +1,16 @@
+body {
+    background-color: #C8C8C8;
+    font-family: sans-serif;
+}
+
 .cltetris {
     font-size: 22px;
     position: relative;
     width: 17em;
     padding: 0.5em;
-    display: inline-block;
+    margin-left: auto;
+    margin-right: auto;
+    background-color: white;
 }
 
 .cltetris__grid * {
