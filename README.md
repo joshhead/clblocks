@@ -1,9 +1,11 @@
 # cltetris
 
-A tetris clone in clojure. Hobby project for fun. Doesn't work yet.
+A tetris clone in ClojureScript.
+
+Demo: [http://joshhead.github.io/cltetris](http://joshhead.github.io/cltetris)
 
 ## License
 
-Copyright © 2012 Joshua Headapohl
+Copyright © 2014 Joshua Headapohl
 
 Distributed under the Eclipse Public License, the same as Clojure.
