@@ -1,0 +1,62 @@
+body {
+    background-color: #C8C8C8;
+    font-family: sans-serif;
+}
+
+.cltetris {
+    font-size: 22px;
+    position: relative;
+    width: 17em;
+    padding: 0.5em;
+    margin-left: auto;
+    margin-right: auto;
+    background-color: white;
+}
+
+.cltetris__grid * {
+    margin: 0;
+    padding: 0;
+    line-height: 0;
+}
+
+[class*=cltetris__cell] {
+  display: inline-block;
+  width: 0.8em;
+  height: 0.8em;
+}
+
+.cltetris__cell--full {
+    background-color: #008000;
+    border: 0.2em outset #00C000;
+}
+
+.cltetris__cell--empty {
+    background-color: #C8C8C8;
+    border: 0.2em solid #C8C8C8;
+}
+
+.cltetris__status {
+    position: absolute;
+    top: 0.5em;
+    left: 12.5em;
+}
+
+.cltetris__status__next {
+    height: 6em;
+}
+
+.cltetris__status__next .cltetris__cell--empty {
+    background-color: rgba(0, 0, 0, 0);
+    border: 0.2em solid rgba(0, 0, 0, 0);
+}
+
+.cltetris__text-overlay {
+    color: white;
+    font-family: sans-serif;
+    font-weight: bold;
+    background-color: rgba(0, 0, 0, .75);
+    position:absolute;
+    padding: .5em;
+    top: 10em;
+    left: 3em;
+}
