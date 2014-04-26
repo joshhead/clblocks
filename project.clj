@@ -7,11 +7,11 @@
 
   :dependencies [[org.clojure/clojure "1.5.1"]
                  [org.clojure/core.async "0.1.267.0-0d7780-alpha"]
-                 [org.clojure/clojurescript "0.0-2122"]
-                 [om "0.1.0"]]
+                 [org.clojure/clojurescript "0.0-2173"]
+                 [om "0.5.2"]]
 
-  :plugins [[com.keminglabs/cljx "0.3.1"]
-            [lein-cljsbuild "1.0.1-SNAPSHOT"]]
+  :plugins [[com.keminglabs/cljx "0.3.2"]
+            [lein-cljsbuild "1.0.2"]]
 
   :source-paths ["src/clj" "target/generated/clj"]
 
@@ -30,12 +30,11 @@
                         :compiler {:output-to "web/cltetris.js"
                                    :output-dir "web/out"
                                    :optimizations :none
-                                   :source-map true
-                                   :foreign-libs [{:file "om/react.js"
-                                                   :provides ["React"]}]
-                                   :externs ["om/externs/react.js"]}}
+                                   :source-map true}}
                        {:id "prod"
                         :source-paths ["src/cljs" "target/generated/cljs"]
                         :compiler {:output-to "web/cltetris.js"
                                    :optimizations :advanced
-                                   :pretty-print false}}]})
+                                   :pretty-print false
+                                   :preamble ["react/react.min.js"]
+                                   :externs ["react/externs/react.js"]}}]})

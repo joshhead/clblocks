@@ -2,10 +2,9 @@
   (:require [cltetris.game :as cltetris]
             [clojure.string :as clojure.string]
             [cljs.core.async :as async]
-            [goog.dom :as gdom]
             [goog.events :as events]
             [goog.events.KeyCodes]
-            [om.core :as om]
+            [om.core :as om :include-macros true]
             [om.dom :as dom :include-macros true])
   (:require-macros [cljs.core.async.macros :refer [go]]))
 
@@ -25,7 +24,7 @@
      (new-frame 200 440))
   ([width height]
      (setup-game-om-root "om" game-states)
-     (gdom/getElement "cltetris")))
+     (.getElementById js/document "cltetris")))
 
 (defn get-event-keyword
   [e]
@@ -128,30 +127,33 @@
    #js {:className "cltetris__status__score"}
    (str "Lines: " lines)))
 
+(defn game-view
+  [game-states]
+  (fn [data owner]
+    (reify
+      om/IWillMount
+      (will-mount [_]
+        (om/update! data :game (cltetris/new-game)))
+      om/IRenderState
+      (render-state [_ state]
+        (dom/div
+         nil
+         (when-let [game (:game state)]
+           (array
+            (dom/div
+             #js {:className "cltetris__field"}
+             (om-grid (game-merged-grid (:game data))))
+            (dom/div
+             #js {:className "cltetris__status"}
+             (array
+              (om-next (:game data))
+              (om-score (:game data)))))))))))
+
 (defn setup-game-om-root
   "id: the id of an element to mount the component at
   game-states: a channel. Put cltetris game states on it"
   [id game-states]
-    (om/root
-     {:game nil}
-     (fn [data]
-       (reify
-         dom/IWillMount
-         (-will-mount [_ _]
-           (go (while true
-                 (om/replace! data [:game] (async/<! game-states)))))
-         dom/IRender
-         (-render [_ _]
-           (dom/div
-            nil
-            (when-let [game (:game data)]
-              (array
-               (dom/div
-                #js {:className "cltetris__field"}
-                (om-grid (game-merged-grid (:game data))))
-               (dom/div
-                #js {:className "cltetris__status"}
-                (array
-                 (om-next (:game data))
-                 (om-score (:game data))))))))))
-     (gdom/getElement id)))
+  (om/root
+   (game-view game-states)
+   (atom {:game nil})
+   {:target (.getElementById js/document id)}))
