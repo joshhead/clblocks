@@ -31,7 +31,7 @@
               key (if (= port keysc) val :down)
               next-game (cltetris/step-game game key)]
           (swap! app-state (constantly {:game next-game}))
-          (when-not (or (nil? key) (= key :escape))
+          (when-not (or (nil? key) (= key :escape) (cltetris/game-over? next-game))
             (recur next-game))))))
 
 (defn ^:export main

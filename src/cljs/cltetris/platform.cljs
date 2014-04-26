@@ -88,12 +88,16 @@
            (array
             (dom/div
              #js {:className "cltetris__field"}
-             (om-grid (game-merged-grid (:game data))))
+             (om-grid (drop 2 (game-merged-grid game))))
             (dom/div
              #js {:className "cltetris__status"}
              (array
-              (om-next (:game data))
-              (om-score (:game data)))))))))))
+              (om-next game)
+              (om-score game)))
+            (when (cltetris/game-over? game)
+              (dom/div
+               #js {:className "cltetris__text-overlay"}
+               "GAME OVER")))))))))
 
 (defn setup-game-om-root
   "id: the id of an element to mount the component at

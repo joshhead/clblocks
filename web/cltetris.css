@@ -42,3 +42,14 @@
     background-color: rgba(0, 0, 0, 0);
     border: 0.2em solid rgba(0, 0, 0, 0);
 }
+
+.cltetris__text-overlay {
+    color: white;
+    font-family: sans-serif;
+    font-weight: bold;
+    background-color: rgba(0, 0, 0, .75);
+    position:absolute;
+    padding: .5em;
+    top: 10em;
+    left: 3em;
+}

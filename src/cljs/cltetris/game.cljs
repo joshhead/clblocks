@@ -191,6 +191,10 @@
       (horizontal-out-of-bounds? game)
       (vertical-out-of-bounds? game)))
 
+(defn game-over?
+  [{:keys [grid]}]
+  (some #(< 0 %) (first grid)))
+
 (defn move-clockwise
   [game]
   (let [moved (update-in game [:piece] rotate-grid)]
