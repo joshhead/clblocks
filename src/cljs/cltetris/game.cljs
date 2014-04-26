@@ -73,8 +73,7 @@
 (defn print-grid
   "Print a grid as one row per line with no spaces"
   [grid]
-  #+clj (println (grid-string grid))
-  #+cljs (.log js/console (grid-string grid))
+  (.log js/console (grid-string grid))
   grid)
 
 (defn empty-row

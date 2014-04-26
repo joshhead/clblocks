@@ -1,9 +1,8 @@
 (ns cltetris.runner
   (:require [cltetris.game :as cltetris]
             [cltetris.platform :as platform]
-            #+clj [clojure.core.async :as async :refer [go go-loop]]
-            #+cljs [cljs.core.async :as async])
-  #+cljs (:require-macros [cljs.core.async.macros :refer [go go-loop]]))
+            [cljs.core.async :as async])
+  (:require-macros [cljs.core.async.macros :refer [go go-loop]]))
 
 (defn tick-chan
   [ms]
@@ -36,22 +35,8 @@
             (recur next-game)))
         (async/>! closec :quit))
 
-    ; Close window if using java.awt
-    #+clj
-    (go
-     (async/<! closec)
-     (.hide frame)
-     (async/close! quitc))
-
     quitc))
 
-#+clj
-(defn -main
-  [& args]
-  (async/<!! (play))
-  (System/exit 0))
-
-#+cljs
 (defn ^:export main
   []
   (play))
