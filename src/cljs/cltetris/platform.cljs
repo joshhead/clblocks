@@ -15,23 +15,12 @@
                goog.events.KeyCodes.SPACE :drop
                goog.events.KeyCodes.ESC :escape})
 
-(def game-states (async/chan))
-
-(declare setup-game-om-root)
-
-(defn new-frame
-  ([]
-     (new-frame 200 440))
-  ([width height]
-     (setup-game-om-root "om" game-states)
-     (.getElementById js/document "cltetris")))
-
 (defn get-event-keyword
   [e]
   (get keycodes (.-keyCode e) nil))
 
 (defn setup-key-listener
-  [frame]
+  []
   (let [event-chan (async/chan)]
 
     (goog.events.listen
@@ -50,50 +39,10 @@
 
     event-chan))
 
-(defn ^:private cell-markup
-  [cell]
-  (if (< 0 cell)
-    "<div class='cltetris__cell--full'></div>"
-    "<div class='cltetris__cell--empty'></div>"))
-
-(defn ^:private row-markup
-  [row]
-  (apply str (concat ["<div class='row'>"] (map cell-markup row) ["</div>"])))
-
-(defn ^:private grid-markup
-  [grid]
-  (apply str (concat ["<div class='cltetris__grid'>"] (map row-markup grid) ["</div>"])))
-
-(defn ^:private score-markup
-  [{:keys [lines]}]
-  (str "<div class='cltetris__status__score'>Lines: " lines "</div>"))
-
-(defn ^:private next-markup
-  [{:keys [next]}]
-  (str "<div class='cltetris__status__next'>Next:" (grid-markup next) "</div>"))
-
-(defn ^:private status-markup
-  [game]
-  (str "<div class='cltetris__status'>" (next-markup game) (score-markup game) "</div>"))
-
 (defn game-merged-grid
   "Take a game and return the grid with the current piece merged in"
   [{:keys [grid piece position] :as game}]
   (cltetris/merge-grid grid piece position))
-
-(defn ^:private game-markup
-  [game]
-  (str "<div class='cltetris__field'>" (grid-markup (game-merged-grid game)) "</div>"
-       (status-markup game)))
-
-(defn frame-draw-game
-  [frame game]
-  (async/put! game-states game)
-  (set! (.-innerHTML frame) (game-markup game)))
-
-(defn setup-close-listener
-  [frame]
-  (async/chan))
 
 (defn om-cell
   [cell]
@@ -131,14 +80,11 @@
   [game-states]
   (fn [data owner]
     (reify
-      om/IWillMount
-      (will-mount [_]
-        (om/update! data :game (cltetris/new-game)))
-      om/IRenderState
-      (render-state [_ state]
+      om/IRender
+      (render [_]
         (dom/div
          nil
-         (when-let [game (:game state)]
+         (when-let [game (:game data)]
            (array
             (dom/div
              #js {:className "cltetris__field"}
@@ -152,8 +98,8 @@
 (defn setup-game-om-root
   "id: the id of an element to mount the component at
   game-states: a channel. Put cltetris game states on it"
-  [id game-states]
+  [id game-states app-state]
   (om/root
    (game-view game-states)
-   (atom {:game nil})
+   app-state
    {:target (.getElementById js/document id)}))
