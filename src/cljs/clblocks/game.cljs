@@ -1,4 +1,4 @@
-(ns cltetris.game
+(ns clblocks.game
   (:require [clojure.string]))
 
 (def i-tetromino

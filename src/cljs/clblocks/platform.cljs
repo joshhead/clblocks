@@ -1,5 +1,5 @@
-(ns cltetris.platform
-  (:require [cltetris.game :as cltetris]
+(ns clblocks.platform
+  (:require [clblocks.game :as clblocks]
             [clojure.string :as clojure.string]
             [cljs.core.async :as async]
             [goog.events :as events]
@@ -42,13 +42,13 @@
 (defn game-merged-grid
   "Take a game and return the grid with the current piece merged in"
   [{:keys [grid piece position] :as game}]
-  (cltetris/merge-grid grid piece position))
+  (clblocks/merge-grid grid piece position))
 
 (defn om-cell
   [cell]
   (if (> cell 0)
-    (dom/div #js {:className "cltetris__cell--full"})
-    (dom/div #js {:className "cltetris__cell--empty"})))
+    (dom/div #js {:className "clblocks__cell--full"})
+    (dom/div #js {:className "clblocks__cell--empty"})))
 
 (defn om-row
   [row]
@@ -61,19 +61,19 @@
 (defn om-grid
   [grid]
   (dom/div
-   #js {:className "cltetris__grid"}
+   #js {:className "clblocks__grid"}
    (into-array (concat (map om-row grid)))))
 
 (defn om-next
   [{:keys [next]}]
   (dom/div
-   #js {:className "cltetris__status__next"}
+   #js {:className "clblocks__status__next"}
    (array "Next: " (om-grid next))))
 
 (defn om-score
   [{:keys [lines]}]
   (dom/div
-   #js {:className "cltetris__status__score"}
+   #js {:className "clblocks__status__score"}
    (str "Lines: " lines)))
 
 (defn game-view
@@ -87,21 +87,21 @@
          (when-let [game (:game data)]
            (array
             (dom/div
-             #js {:className "cltetris__field"}
+             #js {:className "clblocks__field"}
              (om-grid (drop 2 (game-merged-grid game))))
             (dom/div
-             #js {:className "cltetris__status"}
+             #js {:className "clblocks__status"}
              (array
               (om-next game)
               (om-score game)))
-            (when (cltetris/game-over? game)
+            (when (clblocks/game-over? game)
               (dom/div
-               #js {:className "cltetris__text-overlay"}
+               #js {:className "clblocks__text-overlay"}
                "GAME OVER")))))))))
 
 (defn setup-game-om-root
   "id: the id of an element to mount the component at
-  game-states: a channel. Put cltetris game states on it"
+  game-states: a channel. Put clblocks game states on it"
   [id game-states app-state]
   (om/root
    (game-view game-states)

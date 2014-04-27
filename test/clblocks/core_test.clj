@@ -1,6 +1,6 @@
-(ns cltetris.core-test
+(ns clblocks.core-test
   (:use clojure.test
-        cltetris.core))
+        clblocks.core))
 
 (deftest horizontal-out-of-bounds-test
   (testing ""

@@ -1,8 +1,8 @@
-# cltetris
+# clblocks
 
-A tetris clone in ClojureScript.
+A falling blocks game in ClojureScript.
 
-Demo: [http://joshhead.github.io/cltetris](http://joshhead.github.io/cltetris)
+Demo: [http://joshhead.github.io/clblocks](http://joshhead.github.io/clblocks)
 
 ## License
 

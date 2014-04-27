@@ -1,6 +1,6 @@
-(ns cltetris.runner
-  (:require [cltetris.game :as cltetris]
-            [cltetris.platform :as platform]
+(ns clblocks.runner
+  (:require [clblocks.game :as clblocks]
+            [clblocks.platform :as platform]
             [cljs.core.async :as async])
   (:require-macros [cljs.core.async.macros :refer [go go-loop]]))
 
@@ -14,10 +14,10 @@
        (recur)))
     tickc))
 
-(def app-state (atom {:game (cltetris/new-game)}))
+(def app-state (atom {:game (clblocks/new-game)}))
 (def game-states (async/chan))
 
-(platform/setup-game-om-root "cltetris" game-states app-state)
+(platform/setup-game-om-root "clblocks" game-states app-state)
 
 (defn play
   []
@@ -29,9 +29,9 @@
     (go-loop [game (:game @app-state)]
         (let [[val port] (async/alts! [keysc ticker])
               key (if (= port keysc) val :down)
-              next-game (cltetris/step-game game key)]
+              next-game (clblocks/step-game game key)]
           (swap! app-state (constantly {:game next-game}))
-          (when-not (or (nil? key) (= key :escape) (cltetris/game-over? next-game))
+          (when-not (or (nil? key) (= key :escape) (clblocks/game-over? next-game))
             (recur next-game))))))
 
 (defn ^:export main

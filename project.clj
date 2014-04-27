@@ -1,6 +1,6 @@
-(defproject cltetris "0.1.0-SNAPSHOT"
-  :main cltetris.runner
-  :description "Tetris clone in ClojureScript"
+(defproject clblocks "0.1.0-SNAPSHOT"
+  :main clblocks.runner
+  :description "Falling blocks game in ClojureScript"
   :url "http://example.com/FIXME"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
@@ -14,13 +14,13 @@
 
   :cljsbuild {:builds [{:id "dev"
                         :source-paths ["src/cljs"]
-                        :compiler {:output-to "web/cltetris.js"
+                        :compiler {:output-to "web/clblocks.js"
                                    :output-dir "web/out"
                                    :optimizations :none
                                    :source-map true}}
                        {:id "prod"
                         :source-paths ["src/cljs"]
-                        :compiler {:output-to "web/cltetris.js"
+                        :compiler {:output-to "web/clblocks.js"
                                    :optimizations :advanced
                                    :pretty-print false
                                    :preamble ["react/react.min.js"]

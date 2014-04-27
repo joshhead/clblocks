@@ -2,7 +2,7 @@
 /lib
 /classes
 /checkouts
-/web/cltetris.js
+/web/clblocks.js
 /web/out
 pom.xml
 *.jar

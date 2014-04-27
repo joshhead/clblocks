@@ -3,7 +3,7 @@ body {
     font-family: sans-serif;
 }
 
-.cltetris {
+.clblocks {
     font-size: 22px;
     position: relative;
     width: 17em;
@@ -13,44 +13,44 @@ body {
     background-color: white;
 }
 
-.cltetris__grid * {
+.clblocks__grid * {
     margin: 0;
     padding: 0;
     line-height: 0;
 }
 
-[class*=cltetris__cell] {
+[class*=clblocks__cell] {
   display: inline-block;
   width: 0.8em;
   height: 0.8em;
 }
 
-.cltetris__cell--full {
+.clblocks__cell--full {
     background-color: #008000;
     border: 0.2em outset #00C000;
 }
 
-.cltetris__cell--empty {
+.clblocks__cell--empty {
     background-color: #C8C8C8;
     border: 0.2em solid #C8C8C8;
 }
 
-.cltetris__status {
+.clblocks__status {
     position: absolute;
     top: 0.5em;
     left: 12.5em;
 }
 
-.cltetris__status__next {
+.clblocks__status__next {
     height: 6em;
 }
 
-.cltetris__status__next .cltetris__cell--empty {
+.clblocks__status__next .clblocks__cell--empty {
     background-color: rgba(0, 0, 0, 0);
     border: 0.2em solid rgba(0, 0, 0, 0);
 }
 
-.cltetris__text-overlay {
+.clblocks__text-overlay {
     color: white;
     font-family: sans-serif;
     font-weight: bold;
