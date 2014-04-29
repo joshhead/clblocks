@@ -95,8 +95,7 @@
   (let [before (take row (repeatedly #(empty-row cols)))
         middle (map #(expand-row % cols col) grid)
         after (take (- rows row (count grid)) (repeatedly #(empty-row cols)))]
-    (vec (concat before middle after))
-))
+    (vec (concat before middle after))))
 
 (defn merge-grid
   [main sub [row col :as offset]]
@@ -104,6 +103,11 @@
         cols (count (first main))
         expanded-sub (expand-grid sub rows cols offset)]
     (vec (map #(vec (map + %1 %2)) main expanded-sub))))
+
+(defn game-merged-grid
+  "Take a game and return the grid with the current piece merged in"
+  [{:keys [grid piece position] :as game}]
+  (merge-grid grid piece position))
 
 (defn overlapping?
   "True if the game piece overlaps filled space on the grid at its current position"
