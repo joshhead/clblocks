@@ -6,9 +6,9 @@
             :url "http://www.eclipse.org/legal/epl-v10.html"}
 
   :dependencies [[org.clojure/clojure "1.6.0"]
-                 [org.clojure/core.async "0.1.298.0-2a82a1-alpha"]
-                 [org.clojure/clojurescript "0.0-2202"]
-                 [om "0.6.2"]]
+                 [org.clojure/core.async "0.1.319.0-6b1aca-alpha"]
+                 [org.clojure/clojurescript "0.0-2280"]
+                 [om "0.7.1"]]
 
   :plugins [[lein-cljsbuild "1.0.3"]]
 
