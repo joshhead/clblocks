@@ -17,7 +17,7 @@
 
 (defn play
   []
-  (let [app-state (atom {:game (clblocks/unpause (clblocks/new-game))})
+  (let [app-state (atom {:game (clblocks/new-game)})
         ticker (tick-chan 500)
         ; Deal only with key presses
         keysc (async/map< first (async/filter< #(= (second %) :press) (events/setup-key-listener js/document)))]
@@ -26,18 +26,15 @@
       (loop [game (:game @app-state)]
         (let [[val port] (async/alts! [keysc ticker])
               key (if (= port keysc) val :down)
-              next-game (if (and
-                             (get-in @app-state [:game :paused?])
-                             (not= key :pause))
-                          game
-                          (clblocks/step-game game key))]
+              next-game (clblocks/step-game game key)]
 
           (swap! app-state #(assoc % :game next-game))
 
           (when-not (or (nil? key) (clblocks/game-over? next-game))
             (recur next-game))))
 
-      (swap! app-state #(assoc-in % [:game :paused?] false)))
+      ; Unpause game after it ends, game-over+paused is redundant
+      (swap! app-state #(update-in % [:game] clblocks/unpause)))
 
     app-state))
 
