@@ -45,8 +45,7 @@
     (render [_]
       (dom/div
        nil
-       (let [game (:game data)
-             play-state (:play-state data)]
+       (let [game (:game data)]
          (array
           (dom/div
            #js {:className "clblocks__field"}
@@ -55,11 +54,11 @@
            #js {:className "clblocks__status"}
            (om-next game)
            (om-score game))
-          (when (:game-over play-state)
+          (when (clblocks/game-over? game)
             (dom/div
              #js {:className "clblocks__text-overlay"}
              "GAME OVER"))
-          (when (:paused play-state)
+          (when (:paused? game)
             (dom/div
              #js {:className "clblocks__text-overlay"}
              "PAUSED"))))))))

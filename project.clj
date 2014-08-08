@@ -7,8 +7,10 @@
 
   :dependencies [[org.clojure/clojure "1.6.0"]
                  [org.clojure/core.async "0.1.319.0-6b1aca-alpha"]
-                 [org.clojure/clojurescript "0.0-2280"]
+                 [org.clojure/clojurescript "0.0-2307"]
                  [om "0.7.1"]]
+
+  :repositories {"sonatype-oss-public" "https://oss.sonatype.org/content/groups/public/"}
 
   :plugins [[lein-cljsbuild "1.0.3"]]
 
@@ -17,6 +19,7 @@
                         :compiler {:output-to "web/clblocks.js"
                                    :output-dir "web/out"
                                    :optimizations :none
+                                   :pretty-print true
                                    :source-map true}}
                        {:id "prod"
                         :source-paths ["src/cljs"]

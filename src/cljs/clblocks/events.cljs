@@ -9,7 +9,7 @@
                goog.events.KeyCodes.LEFT :left
                goog.events.KeyCodes.RIGHT :right
                goog.events.KeyCodes.SPACE :drop
-               goog.events.KeyCodes.ESC :escape
+               goog.events.KeyCodes.ESC :pause
                goog.events.KeyCodes.P :pause})
 
 (defn get-event-keyword

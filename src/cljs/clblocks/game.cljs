@@ -185,7 +185,8 @@
    :position start-position
    :piece (random-tetromino)
    :next (random-tetromino)
-   :lines 0})
+   :lines 0
+   :paused? true})
 
 (defn hit?
   "Current game has a piece that overlaps a block or is
@@ -245,6 +246,14 @@
       (move-down (first move))
       game)))
 
+(defn pause
+  [game]
+  (assoc game :paused? true))
+
+(defn unpause
+  [game]
+  (assoc game :paused? false))
+
 (defn step-game
   "Advance game one frame"
   [game input]
@@ -255,4 +264,7 @@
     :right (move-right game)
     :down (move-down game)
     :drop (move-drop game)
+    :pause (if (:paused? game)
+             (unpause game)
+             (pause game))
     game))
