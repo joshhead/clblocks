@@ -33,10 +33,10 @@
    (array "Next: " (om-grid next))))
 
 (defn om-score
-  [{:keys [lines]}]
+  [{:keys [lines count]}]
   (dom/div
    #js {:className "clblocks__status__score"}
-   (str "Lines: " lines)))
+   (str "Lines: " lines " Pieces: " count)))
 
 (defn game-view
   [data owner]

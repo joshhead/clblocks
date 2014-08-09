@@ -169,6 +169,7 @@
 (defn activate-next
   [{:keys [piece next] :as game}]
   (-> game
+      (update-in [:count] inc)
       (assoc :piece next)
       (assoc :next (random-tetromino))
       (assoc :position start-position)))
@@ -185,6 +186,7 @@
    :position start-position
    :piece (random-tetromino)
    :next (random-tetromino)
+   :count 1
    :lines 0
    :paused? false})
 
