@@ -6,19 +6,32 @@
             [om.core :as om :include-macros true])
   (:require-macros [cljs.core.async.macros :refer [go go-loop]]))
 
+(defn- now
+  []
+  (.valueOf (new js/Date)))
+
 (defn tick-chan
   [ms]
-  (let [tickc (async/chan)]
-    (go-loop []
-      (async/<! (async/timeout ms))
-      (async/>! tickc :tick)
-      (recur))
-    tickc))
+  (let [ticker (async/chan)
+        control (async/chan)]
+    (go-loop [start (now)
+              timeout ms]
+      (let [[val port] (async/alts! [control (async/timeout timeout)])]
+        (if (= val :pause)
+          (let [elapsed (- (now) start)
+                diff (- ms elapsed)
+                remaining (if (pos? diff) diff ms)]
+            (async/<! control)
+            (recur (now) remaining))
+          (do
+            (async/>! ticker :tick)
+            (recur (now) ms)))))
+    [ticker control]))
 
 (defn play
   []
   (let [app-state (atom {:game (clblocks/new-game)})
-        ticker (tick-chan 500)
+        [ticker tick-control] (tick-chan 500)
         ; Deal only with key presses
         keysc (async/map< first (async/filter< #(= (second %) :press) (events/setup-key-listener js/document)))]
 
