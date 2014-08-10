@@ -51,24 +51,33 @@
            (async/close! ticker)))))
     ticker))
 
+(defn drop-delay
+  [{:keys [lines] :as game}]
+  (let [level (js/Math.floor (/ lines 10))]
+    (- 500 (* level 45))))
+
 (defn play
   []
   (let [app-state (atom {:game (clblocks/new-game)})
         tick-control (async/chan)
-        ticker (tick-chan 500 tick-control)
         ; Deal only with key presses
         keysc (async/map< first (async/filter< #(= (second %) :press) (events/setup-key-listener js/document)))]
 
     (go
       (loop [game (:game @app-state)
-             ticker ticker]
+             ticker (tick-chan (drop-delay game) tick-control)]
         (let [[val port] (async/alts! [keysc ticker])
               key (if (= port keysc) val :down)
               next-game (clblocks/step-game game key)
               next-ticker (cond
-                           (= port ticker) (tick-chan 500 tick-control)
-                           (< (:count game) (:count next-game)) (tick-chan 500 tick-control)
-                           :else ticker)]
+                           (= port ticker)
+                           (tick-chan (drop-delay next-game) tick-control)
+
+                           (< (:count game) (:count next-game))
+                           (tick-chan (drop-delay next-game) tick-control)
+
+                           :else
+                           ticker)]
 
           ; Trigger om rerender
           (swap! app-state #(assoc % :game next-game))

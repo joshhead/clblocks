@@ -38,6 +38,9 @@
    #js {:className "clblocks__status__score"}
    (dom/div
     #js {}
+    (str "Level: " (js/Math.floor (/ lines 10))))
+   (dom/div
+    #js {}
     (str "Lines: " lines))
    (dom/div
     #js {}
