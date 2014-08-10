@@ -36,7 +36,12 @@
   [{:keys [lines count]}]
   (dom/div
    #js {:className "clblocks__status__score"}
-   (str "Lines: " lines " Pieces: " count)))
+   (dom/div
+    #js {}
+    (str "Lines: " lines))
+   (dom/div
+    #js {}
+    (str "Piece: " count))))
 
 (defn game-view
   [data owner]
