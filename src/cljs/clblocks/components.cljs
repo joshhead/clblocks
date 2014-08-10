@@ -8,9 +8,17 @@
 
 (defn om-cell
   [cell]
-  (if (> cell 0)
-    (dom/div #js {:className "clblocks__cell--full"})
-    (dom/div #js {:className "clblocks__cell--empty"})))
+  (let [class-name (condp = (first cell)
+                     nil "clblocks__cell--empty"
+                     :i "clblocks__cell--i"
+                     :j "clblocks__cell--j"
+                     :l "clblocks__cell--l"
+                     :o "clblocks__cell--o"
+                     :s "clblocks__cell--s"
+                     :t "clblocks__cell--t"
+                     :z "clblocks__cell--z"
+                     "clblocks__cell--full")]
+       (dom/div #js {:className class-name})))
 
 (defn om-row
   [row]

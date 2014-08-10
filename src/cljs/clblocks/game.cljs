@@ -2,35 +2,35 @@
   (:require [clojure.string]))
 
 (def i-tetromino
-  [[0 1 0]
-   [0 1 0]
-   [0 1 0]
-   [0 1 0]])
+  [[[  ] [:i] [  ]]
+   [[  ] [:i] [  ]]
+   [[  ] [:i] [  ]]
+   [[  ] [:i] [  ]]])
 
 (def j-tetromino
-  [[1 1 1]
-   [0 0 1]])
+  [[[:j] [:j] [:j]]
+   [[  ] [  ] [:j]]])
 
 (def l-tetromino
-  [[1 1 1]
-   [1 0 0]])
+  [[[:l] [:l] [:l]]
+   [[:l] [  ] [  ]]])
 
 (def o-tetromino
-  [[1 1]
-   [1 1]])
+  [[[:o] [:o]]
+   [[:o] [:o]]])
 
 (def s-tetromino
-  [[0 1 1]
-   [1 1 0]])
+  [[[  ] [:s] [:s]]
+   [[:s] [:s] [  ]]])
 
 (def t-tetromino
-  [[0 1 0]
-   [1 1 1]
-   [0 0 0]])
+  [[[  ] [:t] [  ]]
+   [[:t] [:t] [:t]]
+   [[  ] [  ] [  ]]])
 
 (def z-tetromino
-  [[1 1 0]
-   [0 1 1]])
+  [[[:z] [:z] [  ]]
+   [[  ] [:z] [:z]]])
 
 (defn rotate-grid
   "Rotate 2d grid, intended for tetrominos"
@@ -48,46 +48,58 @@
 
 (defn random-tetromino
   []
-  (nth all-tetrominos (rand-int (count all-tetrominos))))
+  (rand-nth all-tetrominos))
 
 (def field-width 10)
 (def field-height 22)
 (def start-position [0 3])
 
 (defn make-grid
-  "of: what to make a grid of e.g. 10x10 grid of 0's (make-grid 0 10 10)"
+  "of: what to make a grid of e.g. 10x10 grid of []'s (make-grid [] 10 10)"
   [of cols rows]
   (let [row (vec (take cols (repeat of)))]
     (vec (take rows (repeat row)))))
 
+(defn random-block-or-empty
+  []
+  (let [choices [[  ] [  ] [  ] [  ] [  ] [  ] [  ]
+                 [:i] [:j] [:l] [:o] [:s] [:t] [:z]]]
+    (rand-nth choices)))
+
 (defn random-grid
-  "Generate a new grid of the given size filled randomly with 1's and 0's"
+  "Generate a new grid of the given size filled randomly with blocks"
   [cols rows]
-  (let [row (fn [] (vec (take cols (repeatedly #(rand-int 2)))))]
+  (let [row (fn [] (vec (take cols (repeatedly random-block-or-empty))))]
     (vec (take rows (repeatedly row)))))
+
+
+(defn printable-block
+  [block]
+  (if (empty? block) "[  ]" (str block)))
 
 (defn grid-string
   [grid]
-  (clojure.string/join "\n" (map #(apply str %) grid)))
+  (let [printable-grid (map #(map printable-block %) grid)]
+    (clojure.string/join "\n" (map #(apply str %) printable-grid))))
 
 (defn print-grid
-  "Print a grid as one row per line with no spaces"
+  "Pretty-print a grid"
   [grid]
   (.log js/console (grid-string grid))
   grid)
 
 (defn empty-row
   [length]
-  (vec (take length (repeat 0))))
+  (vec (take length (repeat []))))
 
 (defn expand-row
   "row: vector to expand
-  length: length to expand to, padded with 0's
-  offset: precede with this many 0's. negative offsets take from the head"
+  length: length to expand to, padded with []'s
+  offset: precede with this many []'s. negative offsets take from the head"
   [row length offset]
-  (let [before (if (pos? offset) (take offset (repeat 0)) [])
+  (let [before (if (pos? offset) (take offset (repeat [])) [])
         middle (if (pos? offset) row (drop (- offset) row))
-        after (take (- length offset (count row)) (repeat 0))]
+        after (take (- length offset (count row)) (repeat []))]
     (vec (take length (concat before middle after)))))
 
 (defn expand-grid
@@ -97,12 +109,14 @@
         after (take (- rows row (count grid)) (repeatedly #(empty-row cols)))]
     (vec (concat before middle after))))
 
+(def merge-block (comp vec concat))
+
 (defn merge-grid
   [main sub [row col :as offset]]
   (let [rows (count main)
         cols (count (first main))
         expanded-sub (expand-grid sub rows cols offset)]
-    (vec (map #(vec (map + %1 %2)) main expanded-sub))))
+    (vec (map #(vec (map merge-block %1 %2)) main expanded-sub))))
 
 (defn game-merged-grid
   "Take a game and return the grid with the current piece merged in"
@@ -113,15 +127,15 @@
   "True if the game piece overlaps filled space on the grid at its current position"
   [game]
   (let [grid (merge-grid (:grid game) (:piece game) (:position game))]
-    (some (partial < 1) (apply concat grid))))
+    (some #(> (count %) 1) (apply concat grid))))
 
 (defn horizontal-out-of-bounds?
   "True if :position puts all or part of :piece outside of :grid"
   [{:keys [grid piece position] :as game}]
   (let [grid-width (count (first grid))
-        flat-piece (apply map + piece)
-        x-offset (count (take-while zero? flat-piece))
-        inner-width (count (filter (complement zero?) flat-piece))
+        flat-piece (apply map merge-block piece)
+        x-offset (count (take-while empty? flat-piece))
+        inner-width (count (filter (complement empty?) flat-piece))
         offset-position (+ (second position) x-offset)]
     (or (< grid-width (+ offset-position inner-width))
         (< offset-position 0))))
@@ -130,9 +144,9 @@
   "True of :position puts all or part of :piece beyond bottom of :grid"
   [{:keys [grid piece position] :as game}]
   (let [grid-height (count grid)
-        flat-piece (map (partial apply +) piece)
-        y-offset (count (take-while zero? flat-piece))
-        inner-height (count (filter (complement zero?) flat-piece))
+        flat-piece (map (partial apply merge-block) piece)
+        y-offset (count (take-while empty? flat-piece))
+        inner-height (count (filter (complement empty?) flat-piece))
         offset-position (+ (first position) y-offset)]
     (< grid-height (+ offset-position inner-height))))
 
@@ -142,7 +156,7 @@
 
 (defn row-full?
   [row]
-  (every? (partial < 0) row))
+  (every? #(> (count %) 0) row))
 
 (defn count-full-rows
   "Returns number of full rows on grid"
@@ -177,7 +191,7 @@
 (defn n-rows-dirty-grid
   [n]
   (vec (concat
-        (make-grid 0 field-width (- field-height n))
+        (make-grid [] field-width (- field-height n))
         (random-grid field-width n))))
 
 (defn new-game
@@ -200,7 +214,7 @@
 
 (defn game-over?
   [{:keys [grid]}]
-  (some #(< 0 %) (first grid)))
+  (some #(> (count %) 0) (first grid)))
 
 (defn move-clockwise
   [game]
