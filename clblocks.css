@@ -30,6 +30,41 @@ body {
     border: 0.2em outset #00C000;
 }
 
+.clblocks__cell--i {
+    background-color: #11AACC;
+    border: 0.2em outset #33CCFF;
+}
+
+.clblocks__cell--o {
+    background-color: #E0E000;
+    border: 0.2em outset #FFFF00;
+}
+
+.clblocks__cell--t {
+    background-color: #7700CC;
+    border: 0.2em outset #9900FF;
+}
+
+.clblocks__cell--s {
+    background-color: #008000;
+    border: 0.2em outset #00C000;
+}
+
+.clblocks__cell--z {
+    background-color: #CC0000;
+    border: 0.2em outset #FF0000;
+}
+
+.clblocks__cell--j {
+    background-color: #0000CC;
+    border: 0.2em outset #0000FF;
+}
+
+.clblocks__cell--l {
+    background-color: #EE6000;
+    border: 0.2em outset #FF6600;
+}
+
 .clblocks__cell--empty {
     background-color: #C8C8C8;
     border: 0.2em solid #C8C8C8;
