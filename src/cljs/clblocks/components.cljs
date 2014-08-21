@@ -8,7 +8,7 @@
 
 (defn om-cell
   [cell]
-  (let [class-name (condp = (first cell)
+  (let [class-name (condp = (last cell)
                      nil "clblocks__cell--empty"
                      :i "clblocks__cell--i"
                      :j "clblocks__cell--j"
