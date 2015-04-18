@@ -56,18 +56,76 @@
   (let [level (js/Math.floor (/ lines 10))]
     (- 500 (* level 45))))
 
+(defn get-touch-info
+  [touch]
+  {:identifier (.-identifier touch)
+   :screen-x (.-screenX touch)
+   :screen-y (.-screenY touch)})
+
+(defn touch-delta->action
+  [start end]
+  (let [horizontal (- (:screen-x end) (:screen-x start))
+        vertical (- (:screen-y end) (:screen-y start))]
+    (if (> (js/Math.abs horizontal)
+           (js/Math.abs vertical))
+      (if (pos? horizontal)
+        :right
+        :left)
+      (if (pos? vertical)
+        :drop
+        :up))))
+
+(defn handle-start
+  [active-touch-info]
+  (fn [e]
+    (.preventDefault e)
+    (let [touches (.-touches e)]
+      (when (= 1 (.-length touches) 1)
+        (reset! active-touch-info (get-touch-info (aget touches 0)))))))
+
+(defn handle-end
+  [active-touch-info action-chan]
+  (fn [e]
+    (.preventDefault e)
+    (let [touches (.-changedTouches e)
+          active-info @active-touch-info]
+      (when active-info
+        (loop [i 0]
+          (let [touch (aget touches i)]
+            (if (= (.-identifier touch)
+                   (:identifier active-info))
+              (let [action (touch-delta->action active-info
+                                                (get-touch-info touch))]
+                (async/put! action-chan action)
+                (reset! active-touch-info nil))
+              (when (< i (.-length touches))
+                (recur (inc i))))))))))
+
 (defn play
   []
   (let [app-state (atom {:game (clblocks/new-game)})
         tick-control (async/chan)
+        active-touch-info (atom nil)
+        touchc (async/chan)
         ; Deal only with key presses
         keysc (async/map< first (async/filter< #(= (second %) :press) (events/setup-key-listener js/document)))]
+
+    (.addEventListener (js/document.getElementById "clblocks")
+                       "touchstart"
+                       (handle-start active-touch-info)
+                       false)
+    (.addEventListener (js/document.getElementById "clblocks")
+                       "touchend"
+                       (handle-end active-touch-info touchc)
+                       false)
 
     (go
       (loop [game (:game @app-state)
              ticker (tick-chan (drop-delay game) tick-control)]
-        (let [[val port] (async/alts! [keysc ticker])
-              key (if (= port keysc) val :down)
+        (let [[val port] (async/alts! [keysc touchc ticker])
+              key (if (or (= port keysc) (= port touchc))
+                    val
+                    :down)
               next-game (clblocks/step-game game key)
               next-ticker (cond
                            (= port ticker)
